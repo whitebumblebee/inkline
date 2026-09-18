@@ -1,0 +1,58 @@
+:root {
+  color-scheme: light dark;
+  --inkline-bg: #141514;
+  --inkline-panel: #1b1c1a;
+  --inkline-panel-raised: #242522;
+  --inkline-text: #ece8df;
+  --inkline-muted: #a3a69d;
+  --inkline-subtle: #6f736a;
+  --inkline-border: #343632;
+  --inkline-accent: #d4a55c;
+  --inkline-accent-strong: #e8be72;
+  --inkline-selection: #5a4a2a;
+  --inkline-measure: 42rem;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-prose: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, Palatino, "Book Antiqua", Georgia, Cambria, serif;
+  --font-writing: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, Palatino, "Book Antiqua", Georgia, Cambria, serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+:root[data-theme="light"] {
+  --inkline-bg: #f6f3ec;
+  --inkline-panel: #ece8df;
+  --inkline-panel-raised: #e4dfd3;
+  --inkline-text: #1f211d;
+  --inkline-muted: #6d7168;
+  --inkline-subtle: #9a9d94;
+  --inkline-border: #d8d2c6;
+  --inkline-accent: #9a6d2a;
+  --inkline-accent-strong: #7d5618;
+  --inkline-selection: #e2d3b3;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; min-height: 100%; margin: 0; }
+
+body {
+  background: var(--inkline-bg);
+  color: var(--inkline-text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button { font: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--inkline-accent-strong);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "name": "inkline",
+  "displayName": "Inkline",
+  "description": "A focused Markdown editor for VS Code-compatible editors.",
+  "version": "0.1.0",
+  "publisher": "shishirjha",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whitebumblebee/inkline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/whitebumblebee/inkline/issues"
+  },
+  "homepage": "https://github.com/whitebumblebee/inkline#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "editor",
+    "wysiwyg",
+    "writing",
+    "prose"
+  ],
+  "activationEvents": [
+    "onCommand:inkline.open",
+    "onCustomEditor:inkline.markdownEditor",
+    "onLanguage:markdown"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "inkline.open",
+        "title": "Open in Inkline",
+        "category": "Inkline",
+        "icon": {
+          "light": "media/icon.png",
+          "dark": "media/icon.png"
+        }
+      },
+      {
+        "command": "inkline.openNative",
+        "title": "Inkline: Reopen in Native Markdown Editor"
+      },
+      {
+        "command": "inkline.insertImage",
+        "title": "Insert Image",
+        "category": "Inkline"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "inkline.markdownEditor",
+        "displayName": "Inkline Markdown Editor",
+        "selector": [
+          {
+            "filenamePattern": "**/*.md"
+          },
+          {
+            "filenamePattern": "**/*.markdown"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "configuration": {
+      "title": "Inkline",
+      "properties": {
+        "inkline.assetsDirectory": {
+          "type": "string",
+          "default": ".inkline-assets",
+          "description": "Workspace-relative directory for images inserted by Inkline."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "inkline.handledByEditor",
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "when": "activeCustomEditorId == inkline.markdownEditor"
+      },
+      {
+        "command": "inkline.handledByEditor",
+        "key": "ctrl+shift+z",
+        "mac": "cmd+shift+z",
+        "when": "activeCustomEditorId == inkline.markdownEditor"
+      },
+      {
+        "command": "inkline.handledByEditor",
+        "key": "ctrl+y",
+        "mac": "cmd+y",
+        "when": "activeCustomEditorId == inkline.markdownEditor"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "inkline.open",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "inkline.openNative",
+          "when": "activeCustomEditorId == inkline.markdownEditor"
+        },
+        {
+          "command": "inkline.insertImage",
+          "when": "activeCustomEditorId == inkline.markdownEditor"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "vite --config vite.config.ts",
+    "build:webview": "vite build --config vite.config.ts",
+    "build:extension": "node esbuild.mjs",
+    "build": "npm run build:webview && npm run build:extension",
+    "typecheck": "tsc --noEmit && tsc -p webview/tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "test:interaction": "vitest run --run test/editor-interaction.test.ts",
+    "test:all": "vitest run",
+    "test:watch": "vitest",
+    "package": "npm run build && vsce package --allow-missing-repository",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/lang-markdown": "^6.3.3",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/language-data": "^6.5.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.5",
+    "@lezer/highlight": "^1.2.3",
+    "@lezer/markdown": "^1.7.2",
+    "codemirror": "^6.0.2",
+    "katex": "^0.18.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^30.0.0",
+    "@types/katex": "^0.16.8",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}

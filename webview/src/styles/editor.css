@@ -1,0 +1,544 @@
+.inkline-shell {
+  min-height: 100vh;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--inkline-bg);
+}
+
+.editor-header {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px clamp(20px, 5vw, 64px);
+  border-bottom: 1px solid color-mix(in srgb, var(--inkline-border) 70%, transparent);
+}
+
+.brand-lockup, .status-bar, .document-stats {
+  display: flex;
+  align-items: center;
+}
+
+.brand-lockup { gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--inkline-muted); }
+.brand-logo { width: 18px; height: 18px; border-radius: 4px; display: block; object-fit: cover; }
+
+
+
+
+
+
+.editor-frame { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+.editor-content {
+  min-height: calc(100vh - 140px);
+  overflow: auto;
+}
+
+
+.source-editor {
+  width: 100%;
+  min-height: calc(100vh - 140px);
+  color: var(--inkline-text);
+}
+
+.source-editor > .cm-editor {
+  width: 100%;
+  min-height: calc(100vh - 140px);
+  background: transparent;
+  color: var(--inkline-text);
+}
+
+/* Shown instead of the editor if CodeMirror fails to start. */
+.source-fallback {
+  display: block;
+  width: min(100% - 32px, var(--inkline-measure));
+  min-height: calc(100vh - 180px);
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 8rem;
+  border: 0;
+  background: transparent;
+  color: var(--inkline-text);
+  font-family: var(--font-writing);
+  font-size: 20px;
+  line-height: 1.85;
+  resize: none;
+  outline: none;
+}
+
+.inkline-math-source,
+.inkline-math-preview-source {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--inkline-accent-strong);
+}
+
+.inkline-math-preview-widget {
+  display: inline-block;
+  width: 0;
+  overflow: visible;
+  pointer-events: none;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.inkline-math-preview-widget .katex-display {
+  margin: 0;
+}
+
+.status-bar {
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 36px;
+  padding: 0 clamp(20px, 5vw, 64px);
+  border-top: 1px solid color-mix(in srgb, var(--inkline-border) 70%, transparent);
+  color: var(--inkline-subtle);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.status-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Obsidian-style Live Preview styles */
+.cm-line.inkline-heading-line {
+  font-family: var(--font-prose);
+  color: var(--inkline-text);
+}
+
+.cm-line.inkline-h1-line {
+  font-size: 1.65em;
+  font-weight: 700;
+  line-height: 1.3;
+  padding-top: 0.9em;
+  padding-bottom: 0.25em;
+}
+
+.cm-line.inkline-h2-line {
+  font-size: 1.35em;
+  font-weight: 600;
+  line-height: 1.35;
+  padding-top: 0.75em;
+  padding-bottom: 0.2em;
+}
+
+.cm-line.inkline-h3-line {
+  font-size: 1.18em;
+  font-weight: 600;
+  line-height: 1.4;
+  padding-top: 0.6em;
+  padding-bottom: 0.15em;
+}
+
+.cm-line.inkline-h4-line {
+  font-size: 1.08em;
+  font-weight: 600;
+  padding-top: 0.45em;
+}
+
+.cm-line.inkline-h5-line {
+  font-size: 1.02em;
+  font-weight: 600;
+  padding-top: 0.35em;
+}
+
+.cm-line.inkline-h6-line {
+  font-size: 1em;
+  font-weight: 600;
+  padding-top: 0.35em;
+}
+
+.inkline-math-preview-source {
+  color: transparent !important;
+  font-family: var(--font-prose);
+  font-size: 1em;
+  font-style: italic;
+}
+
+.inkline-math-block-source {
+  display: inline-block;
+  padding: 0.2em 0.45em;
+  border: 1px solid var(--inkline-border);
+  border-radius: 4px;
+  background: var(--inkline-panel-raised);
+}
+
+/* Concealed Markdown syntax.
+   `display: none` rather than a zero-sized box: CodeMirror resolves a click by
+   binary-searching the client rects of the characters on the line, and a
+   zero-width box - or one whose rect sits on the baseline instead of spanning
+   the line - breaks that search, so clicks anywhere past the first concealed
+   marker on a line collapse onto it. A hidden element contributes no rects at
+   all, which the search handles correctly. The source text stays in the DOM and
+   in the document either way. */
+.inkline-hidden-syntax:not(.inkline-task-marker) {
+  display: none;
+}
+
+/* A line whose entire content is concealed (a code fence, a callout header)
+   would otherwise generate no line box at all and collapse to its padding. A
+   zero-width inline box restores the line's natural height without adding
+   anything the coordinate search can trip over - a pseudo-element is not part
+   of the editor's view tree. */
+.cm-line:has(> .inkline-hidden-syntax)::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+}
+
+.cm-activeLine .inkline-hidden-syntax:not(.inkline-task-marker) {
+  display: inline;
+  color: var(--inkline-subtle) !important;
+  opacity: 0.55 !important;
+}
+
+.cm-activeLine .inkline-hidden-syntax:not(.inkline-task-marker) * {
+  color: var(--inkline-subtle) !important;
+}
+
+.inkline-task-marker.inkline-hidden-syntax {
+  color: transparent !important;
+  opacity: 1 !important;
+}
+
+.inkline-heading-mark,
+.inkline-codeblock-fence,
+.inkline-codeblock-info,
+.inkline-blockquote-mark,
+.inkline-callout-marker,
+.inkline-task-marker {
+  color: var(--inkline-subtle);
+  opacity: 0.55;
+  font-weight: 400;
+}
+
+.inkline-task-marker::before {
+  content: '□';
+  display: inline-block;
+  margin-right: 4px;
+  color: var(--inkline-accent-strong);
+  opacity: 1;
+}
+
+.inkline-highlight {
+  background: color-mix(in srgb, #d4a55c 28%, transparent);
+  border-radius: 2px;
+}
+
+.inkline-comment {
+  color: var(--inkline-subtle);
+  opacity: 0.62;
+  font-style: italic;
+}
+
+.inkline-footnote,
+.inkline-footnote-definition {
+  color: var(--inkline-accent-strong);
+  font-size: 0.9em;
+}
+
+.inkline-image-source {
+  color: var(--inkline-accent-strong);
+}
+
+.inkline-math-source {
+  color: var(--inkline-accent-strong);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Outer spacing for card-like blocks (code fences, callouts).
+   Applied as padding to the neighbouring line rather than as a margin on the
+   block: CodeMirror derives its height map from line border boxes, and a margin
+   it cannot see shifts the rendered document away from the positions it
+   computes, so clicks and drags land on the wrong line. */
+.cm-line.inkline-space-below {
+  padding-bottom: 16px;
+}
+
+.cm-line.inkline-space-above {
+  padding-top: 16px;
+}
+
+/* Fenced Code Block Card */
+.cm-line.inkline-codeblock-line {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.65;
+  padding-left: 18px;
+  padding-right: 18px;
+  background: var(--inkline-panel);
+  border-left: 1px solid var(--inkline-border);
+  border-right: 1px solid var(--inkline-border);
+}
+
+.cm-line.inkline-codeblock-first {
+  padding-top: 32px;
+  border-top: 1px solid var(--inkline-border);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  position: relative;
+}
+
+.cm-line.inkline-codeblock-first::before {
+  content: attr(data-code-language);
+  position: absolute;
+  top: 8px;
+  left: 18px;
+  color: var(--inkline-accent-strong);
+  font: 600 11px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cm-line.inkline-codeblock-last {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--inkline-border);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+/* Tables.
+   The pipe source stays in the document, so the row is set in the mono face at
+   tabular widths: aligned source lines up into real columns, and the block is
+   drawn as one card. */
+.cm-line.inkline-table-line {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  line-height: 1.9;
+  font-variant-numeric: tabular-nums;
+  padding-left: 16px;
+  padding-right: 16px;
+  background: var(--inkline-panel);
+  border-left: 1px solid var(--inkline-border);
+  border-right: 1px solid var(--inkline-border);
+}
+
+.cm-line.inkline-table-first {
+  padding-top: 10px;
+  border-top: 1px solid var(--inkline-border);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  font-weight: 600;
+  color: var(--inkline-text);
+}
+
+.cm-line.inkline-table-last {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--inkline-border);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.cm-line.inkline-table-delimiter {
+  color: var(--inkline-subtle);
+  opacity: 0.7;
+}
+
+/* A table the caret is not inside is drawn as a real table. The source lines
+   come back the moment you click into it. */
+.inkline-table-preview {
+  /* Padding, not margin: CodeMirror measures this widget's border box for its
+     height map, so a margin here desynchronises the rendered document from the
+     positions it computes - the same way a margin on a line would. */
+  padding: 0.2em 0 0.4em;
+  overflow-x: auto;
+}
+
+.inkline-table-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-prose);
+  font-size: 0.86em;
+  line-height: 1.5;
+}
+
+.inkline-table-preview th,
+.inkline-table-preview td {
+  padding: 7px 12px;
+  border: 1px solid var(--inkline-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.inkline-table-preview th {
+  background: var(--inkline-panel-raised);
+  color: var(--inkline-text);
+  font-weight: 600;
+  /* A header squeezed below its own word width breaks mid-word ("St/e/p").
+     Keeping headers on one line sets a sensible floor for each column; if the
+     table still cannot fit, the wrapper scrolls instead. */
+  white-space: nowrap;
+}
+
+.inkline-table-preview td {
+  color: var(--inkline-muted);
+}
+
+.inkline-table-preview tr:hover td {
+  background: color-mix(in srgb, var(--inkline-accent) 5%, transparent);
+}
+
+.inkline-table-preview .inkline-table-code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--inkline-panel-raised);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+}
+
+/* While editing, the source must not wrap - wrapped rows destroy the columns. */
+.cm-line.inkline-table-line {
+  white-space: pre;
+}
+
+/* Horizontal rules. The marker is concealed like any other syntax and the line
+   itself draws the rule, so `---` reads as a divider rather than as text. */
+.cm-line.inkline-horizontal-rule-line {
+  position: relative;
+  padding-top: 0.9em;
+  padding-bottom: 0.9em;
+}
+
+.cm-line.inkline-horizontal-rule-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px solid var(--inkline-border);
+}
+
+.inkline-horizontal-rule {
+  color: var(--inkline-subtle);
+  opacity: 0.55;
+}
+
+/* YAML frontmatter, which is metadata rather than prose. */
+.cm-line.inkline-frontmatter-line {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  line-height: 1.85;
+  color: var(--inkline-muted);
+  padding-left: 16px;
+  padding-right: 16px;
+  background: color-mix(in srgb, var(--inkline-panel) 70%, transparent);
+  border-left: 2px solid var(--inkline-border);
+}
+
+.cm-line.inkline-frontmatter-first {
+  padding-top: 8px;
+  border-top-right-radius: 6px;
+}
+
+.cm-line.inkline-frontmatter-last {
+  padding-bottom: 8px;
+  border-bottom-right-radius: 6px;
+  color: var(--inkline-subtle);
+}
+
+/* Inline image previews for workspace files the host has approved. */
+.inkline-image-preview {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.inkline-image-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--inkline-border);
+  border-radius: 6px;
+  background: var(--inkline-panel);
+}
+
+/* Links */
+.inkline-live-link {
+  color: var(--inkline-accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  cursor: pointer;
+}
+
+.inkline-live-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--inkline-accent);
+  font-size: 0.85em;
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+  margin-left: 3px;
+  padding: 1px 4px;
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: 4px;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.inkline-live-link-icon:hover {
+  opacity: 1;
+  background-color: var(--inkline-panel-raised);
+}
+
+/* Inline code badge */
+.inkline-live-inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--inkline-panel-raised);
+  border: 1px solid var(--inkline-border);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  color: var(--inkline-text);
+}
+
+/* Task Checkbox */
+
+/* Blockquotes */
+.cm-line.inkline-blockquote-line {
+  border-left: 3px solid var(--inkline-accent);
+  padding-left: 16px;
+  color: var(--inkline-muted);
+  font-style: italic;
+}
+
+/* WikiLinks [[target|alias]] */
+.inkline-live-wikilink {
+  color: var(--inkline-accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Callout Alerts (GitHub / Obsidian style) */
+.cm-line.inkline-callout-line {
+  padding-left: 16px;
+  border-left: 3px solid var(--callout-color, var(--inkline-accent));
+  background: color-mix(in srgb, var(--callout-color, var(--inkline-panel)) 6%, transparent);
+}
+
+.cm-line.inkline-callout-first {
+  padding-top: 6px;
+  border-top-right-radius: 6px;
+}
+
+.cm-line.inkline-callout-last {
+  padding-bottom: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.inkline-callout-note { --callout-color: #58a6ff; }
+.inkline-callout-tip { --callout-color: #3fb950; }
+.inkline-callout-important { --callout-color: #a371f7; }
+.inkline-callout-warning { --callout-color: #d29922; }
+.inkline-callout-caution { --callout-color: #f85149; }
+
+@media (max-width: 640px) {
+  .editor-header { align-items: flex-start; flex-direction: column; gap: 10px; padding-block: 12px; }
+  .writing-column { width: min(100% - 24px, var(--inkline-measure)); padding-top: 1.5rem; }
+  .status-bar { align-items: flex-start; flex-direction: column; gap: 4px; padding-block: 8px; }
+}

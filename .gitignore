@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.vsix
+*.tsbuildinfo
+coverage/
+.vscode-test/
+
+# Environment and logs
+.env
+.env.*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent and AI tooling (local to a machine, not part of the program)
+.claude/
+.commandcode/
+.cursor/
+.cursorrules
+.cursorignore
+.windsurfrules
+.aider*
+.continue/
+.codeium/
+.gemini/
+.antigravity/
+.kiro/
+CLAUDE.md
+AGENTS.md
+.github/copilot-instructions.md
+
+# Local scratch
+test.md
+scratch-*.png
