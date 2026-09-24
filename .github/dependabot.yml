@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # The webview bundles CodeMirror and KaTeX into the shipped extension, so a
+  # dependency advisory here is an advisory in the product.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      codemirror:
+        patterns: ['@codemirror/*', '@lezer/*', 'codemirror']
+      dev-tooling:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

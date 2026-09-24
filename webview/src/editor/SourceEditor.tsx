@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { closeBrackets } from '@codemirror/autocomplete'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
-import { languages } from '@codemirror/language-data'
 import { bracketMatching, indentOnInput, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { EditorState, Transaction } from '@codemirror/state'
 import { EditorView, highlightActiveLine, placeholder } from '@codemirror/view'
 import { postMessage } from '../protocol'
 import { GFM } from '@lezer/markdown'
 import { inklineKeymap } from './editor-keymap'
+import { codeLanguages } from './code-languages'
 import { markdownEditorTheme, markdownHighlight } from './markdown-highlight'
 import { livePreview, refreshLivePreview } from './live-preview'
 import { tablePreview } from './table-preview'
@@ -48,7 +48,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
             placeholder('Write in Markdown. Use $...$ or $$...$$ for LaTeX.'),
             markdown({
               base: markdownLanguage,
-              codeLanguages: languages,
+              codeLanguages,
               extensions: [GFM],
               addKeymap: true,
             }),

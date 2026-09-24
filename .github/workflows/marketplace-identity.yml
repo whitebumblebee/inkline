@@ -1,0 +1,62 @@
+name: Marketplace identity
+
+# Run by hand from the Actions tab. Signs in as the Azure identity the release
+# publishes with, prints the ID the Marketplace needs in order to add it as a
+# member of the publisher, then checks whether it already has rights there.
+#
+# The ID can only be read by the identity itself, which is why this has to run
+# in CI rather than on a laptop. It is an identifier, not a credential.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Sign in to Azure as the publishing identity
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          # The identity is an app registration in Microsoft Entra ID. It needs no
+          # Azure subscription, so nothing here depends on one staying active.
+          allow-no-subscriptions: true
+
+      - name: Print the ID to add to the publisher
+        run: |
+          ID="$(az rest \
+            -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query id -o tsv)"
+          echo "Marketplace member ID: $ID"
+          {
+            echo "### Marketplace member ID"
+            echo
+            echo "Add this as a **Contributor** on the publisher's Members page:"
+            echo
+            echo '```'
+            echo "$ID"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check the identity's rights on the publisher
+        run: |
+          if npx --no-install vsce verify-pat shishirjha --azure-credential; then
+            echo "### ✅ The identity can publish as shishirjha" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Not a member of the publisher yet. Add the ID printed above on the Members page as Contributor, then run this again."
+            exit 1
+          fi

@@ -4,7 +4,12 @@ test/**
 src/**
 webview/**
 .github/**
+scripts/**
+docs/**
 **/*.tsbuildinfo
+# Sourcemaps are kept for local development but must not ship: they are
+# several times the size of the code they describe.
+**/*.map
 coverage/**
 node_modules/**
 .gitignore

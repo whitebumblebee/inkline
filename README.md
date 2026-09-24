@@ -40,6 +40,20 @@ npm run package
 code --install-extension inkline-0.1.0.vsix
 ```
 
+## Install
+
+Inkline is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=shishirjha.inkline)
+and on [Open VSX](https://open-vsx.org/extension/shishirjha/inkline) for Cursor,
+Windsurf, VSCodium and Gitpod.
+
+Every release also attaches a `.vsix` to its
+[GitHub release](https://github.com/whitebumblebee/inkline/releases), which can
+be installed directly:
+
+```bash
+code --install-extension inkline-0.1.0.vsix
+```
+
 ## Use
 
 Open a Markdown file, run **Inkline: Open in Inkline**, and choose Inkline when prompted. The custom editor is opt-in by default, so the native Markdown editor remains available.

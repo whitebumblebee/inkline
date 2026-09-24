@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  # Lets the job request a GitHub-signed identity token, which Azure exchanges
+  # for a short-lived Microsoft Entra token. No publishing secret is stored.
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The Azure federated credential trusts this environment rather than a tag:
+    # tags change with every release, the environment name never does.
+    environment: release
+    env:
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # A tag that disagrees with package.json would ship the wrong version
+      # under the right name. Stop before anything is published.
+      - name: Check the tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          echo "tag=$TAG package.json=$PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+          echo "VERSION=$PKG" >> "$GITHUB_ENV"
+
+      # Fails when the version has no changelog entry, so a release can never
+      # go out with empty notes.
+      - name: Read the release notes from the changelog
+        run: |
+          {
+            echo 'NOTES<<RELEASE_NOTES_EOF'
+            node scripts/release-notes.mjs "$VERSION"
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_ENV"
+
+      - run: npm run verify
+
+      # Built once. The same file goes to both marketplaces and to GitHub, so
+      # the three can never drift apart.
+      - name: Package
+        run: |
+          npm run package
+          echo "VSIX=inkline-$VERSION.vsix" >> "$GITHUB_ENV"
+
+      # Every publish below tolerates "this version already exists". A release
+      # that stops half-way is finished by re-running the job - nothing to undo.
+
+      - name: Sign in to Azure as the publishing identity
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          # The identity is an app registration in Microsoft Entra ID. It needs no
+          # Azure subscription, so nothing here depends on one staying active.
+          allow-no-subscriptions: true
+
+      - name: Publish to the VS Code Marketplace
+        run: npx --no-install vsce publish --packagePath "$VSIX" --azure-credential --skip-duplicate
+
+      - name: Publish to Open VSX
+        if: env.OVSX_PAT != ''
+        run: npx --no-install ovsx publish "$VSIX" --pat "$OVSX_PAT" --skip-duplicate
+
+      # Last, so a release page only appears once the marketplaces have it.
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$VSIX" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$VSIX" \
+              --title "$GITHUB_REF_NAME" \
+              --notes "$NOTES"
+          fi
+
+      - name: Report a skipped Open VSX publish
+        if: env.OVSX_PAT == ''
+        run: echo "::warning::OVSX_PAT is not set - skipped Open VSX."
