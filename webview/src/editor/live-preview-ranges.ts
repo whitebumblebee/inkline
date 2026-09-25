@@ -65,8 +65,15 @@ export interface InlineFormatRange {
 
 export interface TaskRange {
   type: 'task'
+  /** The `[ ]` / `[x]` marker. */
   from: number
   to: number
+  /**
+   * Start of what the checkbox stands in for: the bullet of a `-`, `*` or `+`
+   * list item, so `- [x]` becomes a single box. Ordered items keep their number.
+   */
+  concealFrom: number
+  lineTo: number
   checked: boolean
   hidden: boolean
 }
@@ -96,8 +103,11 @@ export interface CalloutRange {
   firstLineTo: number
   firstLineNumber: number
   lastLineNumber: number
+  /** `> [!TIP]` and the whitespace after it. */
   markFrom: number
   markTo: number
+  /** Optional custom title written after the marker; empty when there is none. */
+  title: string
   hidden: boolean
 }
 
@@ -391,14 +401,18 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
 
       // 8. Task Markers
       else if (node.name === 'TaskMarker') {
-        const touches = selectionTouchesRange(state, node.from, node.to)
+        const listMark = node.node.parent?.parent?.firstChild
+        const bullet = listMark?.name === 'ListMark' && /^[-*+]$/u.test(doc.sliceString(listMark.from, listMark.to))
+        const concealFrom = bullet && listMark ? listMark.from : node.from
         const markerText = doc.sliceString(node.from, node.to)
         items.push({
           type: 'task',
           from: node.from,
           to: node.to,
+          concealFrom,
+          lineTo: doc.lineAt(node.to).to,
           checked: markerText.toLowerCase().includes('x'),
-          hidden: !touches,
+          hidden: !selectionTouchesRange(state, concealFrom, node.to),
         })
       }
 
@@ -412,7 +426,8 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
           const calloutType = calloutMatch[2].toLowerCase() as CalloutRange['calloutType']
           const cursorOnFirstLine = selectionTouchesLine(state, firstLine.from, firstLine.to)
           const markStart = firstLine.from + calloutMatch[1].length
-          const markEnd = firstLine.from + firstLine.text.length
+          const title = calloutMatch[3].trim()
+          const markEnd = title ? firstLine.to - calloutMatch[3].length : firstLine.to
 
           items.push({
             type: 'callout',
@@ -423,6 +438,7 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
             lastLineNumber: lastLine.number,
             markFrom: markStart,
             markTo: markEnd,
+            title,
             hidden: !cursorOnFirstLine,
           })
 

@@ -4,6 +4,22 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Task list items show a single checkbox in place of `- [ ]`, ticked when the
+  item is done. Clicking it toggles the item, and done items are struck through.
+- Inline math no longer leaves a blank gap after the rendered formula.
+- `$$` blocks written across several lines render as one formula instead of
+  three bordered boxes. Click the formula to edit it.
+- Callouts show their icon and title (`Tip`, `Warning`, or your own title)
+  instead of an empty first line.
+- List items use the normal text colour instead of the accent colour.
+- Brackets in frontmatter, such as `tags: [a, b]`, are no longer styled as links.
+- Clicking a hidden code fence line, a `>` spacer line in a quote, or a
+  horizontal rule places the caret instead of doing nothing.
+
 ## [0.1.0] - 2026-09-24
 
 Initial release.

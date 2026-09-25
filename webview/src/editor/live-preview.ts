@@ -1,8 +1,8 @@
-import { RangeSetBuilder, StateEffect, type EditorState, type Range } from '@codemirror/state'
+import { StateEffect, type EditorState, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view'
-import katex from 'katex'
 import { postMessage } from '../protocol'
 import { findMathRanges } from './math-ranges'
+import { MathPreviewWidget, ownsLines } from './math-preview'
 import {
   findCodeRanges,
   findFrontmatter,
@@ -81,33 +81,156 @@ function mark(from: number, to: number, className: string, attributes?: Record<s
   }
 }
 
+const hiddenSyntax = Decoration.mark({ class: 'inkline-hidden-syntax' })
+
 function hide(from: number, to: number): PreviewItem {
-  return { from, to, decoration: Decoration.mark({ class: 'inkline-hidden-syntax' }) }
+  return { from, to, decoration: hiddenSyntax }
 }
 
-class MathPreviewWidget extends WidgetType {
-  constructor(readonly latex: string, readonly block: boolean) {
-    super()
-  }
-
-  eq(other: MathPreviewWidget): boolean {
-    return this.latex === other.latex && this.block === other.block
+/** Holds a line open when everything on it is concealed. */
+class LineStrutWidget extends WidgetType {
+  eq(): boolean {
+    return true
   }
 
   toDOM(): HTMLElement {
     const node = document.createElement('span')
-    node.className = 'inkline-math-preview-widget'
-    node.setAttribute('aria-hidden', 'true')
-    try {
-      katex.render(this.latex, node, { displayMode: this.block, throwOnError: false, output: 'html' })
-    } catch {
-      node.textContent = this.latex
+    node.className = 'inkline-line-strut'
+    return node
+  }
+
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+const lineStrut = new LineStrutWidget()
+
+/**
+ * A line made up entirely of concealed syntax (a code fence, a `>` spacer in a
+ * quote, a thematic break) has no visible piece for CodeMirror to map a click
+ * onto, and CodeMirror 6.43 throws when a line offers none. Such lines are
+ * replaced whole by an empty strut, which also keeps their height.
+ */
+function strutConcealedLines(items: PreviewItem[], state: EditorState): PreviewItem[] {
+  const hiddenByLine = new Map<number, PreviewItem[]>()
+  for (const item of items) {
+    if (item.decoration !== hiddenSyntax) continue
+    const line = state.doc.lineAt(item.from).number
+    if (state.doc.lineAt(item.to).number !== line) continue
+    hiddenByLine.set(line, [...(hiddenByLine.get(line) ?? []), item])
+  }
+  const replaced = new Set<PreviewItem>()
+  const struts: PreviewItem[] = []
+  for (const [lineNumber, hidden] of hiddenByLine) {
+    const line = state.doc.line(lineNumber)
+    let covered = line.from
+    for (const item of [...hidden].sort((a, b) => a.from - b.from)) {
+      if (item.from > covered) break
+      covered = Math.max(covered, item.to)
     }
+    if (covered < line.to || line.from === line.to) continue
+    for (const item of hidden) replaced.add(item)
+    struts.push(replaceWith(line.from, line.to, lineStrut))
+  }
+  return replaced.size ? [...items.filter((item) => !replaced.has(item)), ...struts] : items
+}
+
+/**
+ * Swaps source for a widget that stands in for it (a checkbox for `- [x]`, the
+ * rendered formula for `$…$`). A replacement rather than a widget next to
+ * hidden text: CodeMirror maps a click through the rectangles of a line's
+ * pieces and skips zero-length widgets, so a line holding only a widget beside
+ * hidden text has nothing it can hit - and CodeMirror 6.43 throws on that.
+ */
+function replaceWith(from: number, to: number, widget: WidgetType): PreviewItem {
+  return { from, to, decoration: Decoration.replace({ widget }) }
+}
+
+class TaskCheckboxWidget extends WidgetType {
+  constructor(readonly checked: boolean) {
+    super()
+  }
+
+  eq(other: TaskCheckboxWidget): boolean {
+    return this.checked === other.checked
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const node = document.createElement('span')
+    node.className = this.checked ? 'inkline-task-checkbox is-checked' : 'inkline-task-checkbox'
+    node.setAttribute('role', 'checkbox')
+    node.setAttribute('aria-checked', String(this.checked))
+    node.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      // Positions shift as the document is edited, so the marker is located
+      // from the widget's current position rather than remembered.
+      const pos = view.posAtDOM(node)
+      const line = view.state.doc.lineAt(pos)
+      const offset = line.text.indexOf('[', pos - line.from)
+      if (offset === -1 || !/^\[[ xX]\]/u.test(line.text.slice(offset))) return
+      const at = line.from + offset + 1
+      view.dispatch({ changes: { from: at, to: at + 1, insert: this.checked ? ' ' : 'x' } })
+    })
     return node
   }
 
   ignoreEvent(): boolean {
     return true
+  }
+}
+
+const CALLOUT_ICONS: Record<string, string[]> = {
+  note: ['M22 12a10 10 0 1 1-20 0a10 10 0 1 1 20 0', 'M12 16v-4', 'M12 8h.01'],
+  tip: [
+    'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5',
+    'M9 18h6',
+    'M10 22h4',
+  ],
+  important: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'M12 7v4', 'M12 14h.01'],
+  warning: ['m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3', 'M12 9v4', 'M12 17h.01'],
+  caution: [
+    'M8.7 2h6.6a2 2 0 0 1 1.4.6l4.7 4.7a2 2 0 0 1 .6 1.4v6.6a2 2 0 0 1-.6 1.4l-4.7 4.7a2 2 0 0 1-1.4.6H8.7a2 2 0 0 1-1.4-.6l-4.7-4.7A2 2 0 0 1 2 15.3V8.7a2 2 0 0 1 .6-1.4l4.7-4.7A2 2 0 0 1 8.7 2z',
+    'M12 8v4',
+    'M12 16h.01',
+  ],
+}
+
+/** The icon, plus the type's name when the callout has no title of its own. */
+class CalloutTitleWidget extends WidgetType {
+  constructor(readonly calloutType: string, readonly showLabel: boolean) {
+    super()
+  }
+
+  eq(other: CalloutTitleWidget): boolean {
+    return this.calloutType === other.calloutType && this.showLabel === other.showLabel
+  }
+
+  toDOM(): HTMLElement {
+    const node = document.createElement('span')
+    node.className = 'inkline-callout-title-widget'
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('class', 'inkline-callout-icon')
+    svg.setAttribute('viewBox', '0 0 24 24')
+    svg.setAttribute('aria-hidden', 'true')
+    for (const d of CALLOUT_ICONS[this.calloutType] ?? CALLOUT_ICONS.note) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+      path.setAttribute('d', d)
+      svg.appendChild(path)
+    }
+    node.appendChild(svg)
+    if (this.showLabel) {
+      const label = document.createElement('span')
+      label.className = 'inkline-callout-title'
+      label.textContent = this.calloutType.charAt(0).toUpperCase() + this.calloutType.slice(1)
+      node.appendChild(label)
+    }
+    return node
+  }
+
+  // Clicking the title puts the caret on the header line, revealing `[!TYPE]`.
+  ignoreEvent(): boolean {
+    return false
   }
 }
 
@@ -239,9 +362,16 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
         items.push(hide(item.closeFrom, item.closeTo))
       }
       break
-    case 'task':
-      if (item.hidden) items.push(mark(item.from, item.to, 'inkline-task-marker inkline-hidden-syntax'))
+    case 'task': {
+      if (item.hidden) {
+        items.push(replaceWith(item.concealFrom, item.to, new TaskCheckboxWidget(item.checked)))
+      } else {
+        items.push(mark(item.from, item.to, 'inkline-task-marker'))
+      }
+      const textFrom = Math.min(item.to + 1, item.lineTo)
+      if (item.checked && textFrom < item.lineTo) items.push(mark(textFrom, item.lineTo, 'inkline-task-done'))
       break
+    }
     case 'callout':
       addBlockSpacing(items, state, state.doc.lineAt(item.firstLineFrom).number, item.lastLineNumber)
       items.push({
@@ -251,8 +381,12 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
           class: `inkline-callout-line inkline-callout-first inkline-callout-${item.calloutType}`,
         }),
       })
-      if (item.hidden && item.markFrom < item.markTo) items.push(hide(item.markFrom, item.markTo))
-      else if (item.markFrom < item.markTo) items.push(mark(item.markFrom, item.markTo, 'inkline-callout-marker'))
+      if (item.hidden && item.markFrom < item.markTo) {
+        items.push(replaceWith(item.markFrom, item.markTo, new CalloutTitleWidget(item.calloutType, !item.title)))
+      } else if (item.markFrom < item.markTo) {
+        items.push(mark(item.markFrom, item.markTo, 'inkline-callout-marker'))
+      }
+      if (item.title) items.push(mark(item.markTo, item.firstLineTo, 'inkline-callout-title'))
       break
     case 'blockquote':
       items.push({
@@ -284,12 +418,7 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
         break
       }
       if (item.hidden) {
-        items.push(hide(item.from, item.to))
-        items.push({
-          from: item.to,
-          to: item.to,
-          decoration: Decoration.widget({ widget: new ImagePreviewWidget(uri, item.alt), side: 1 }),
-        })
+        items.push(replaceWith(item.from, item.to, new ImagePreviewWidget(uri, item.alt)))
       } else {
         items.push(mark(item.from, item.to, 'inkline-image-source'))
       }
@@ -397,28 +526,21 @@ function buildDecorations(state: EditorState, scope?: ScanScope): DecorationSet 
     if (!range.latex) continue
     if (insideCodeRange(code, range.from, range.to)) continue
     const active = selectionTouchesRange(state, range.from, range.to)
-    items.push(mark(
-      range.from,
-      range.to,
-      active
-        ? range.block ? 'inkline-math-source inkline-math-block-source' : 'inkline-math-source'
-        : range.block ? 'inkline-math-preview-source inkline-math-block-source' : 'inkline-math-preview-source',
-    ))
-    if (!active) {
-      items.push({
-        from: range.from,
-        to: range.from,
-        decoration: Decoration.widget({ widget: new MathPreviewWidget(range.latex, range.block), side: -1 }),
-      })
+    if (active) {
+      items.push(mark(range.from, range.to, 'inkline-math-source'))
+    } else if (!ownsLines(state.doc, range)) {
+      // Blocks on lines of their own are rendered by the math block preview.
+      items.push(replaceWith(range.from, range.to, new MathPreviewWidget(range.latex, range.block)))
     }
   }
 
-  const ranges: Range<Decoration>[] = items
-    .sort((a, b) => a.from - b.from || a.to - b.to)
-    .map((item) => ({ from: item.from, to: item.to, value: item.decoration }))
-  const builder = new RangeSetBuilder<Decoration>()
-  for (const range of ranges) builder.add(range.from, range.to, range.value)
-  return builder.finish()
+  // Decoration.set sorts by position *and* side; sorting by position alone can
+  // put a line decoration after a widget at the same spot, which is rejected.
+  // Empty marks (``, an empty bold) style nothing and are not allowed.
+  const ranges: Range<Decoration>[] = strutConcealedLines(items, state)
+    .filter((item) => item.from < item.to || item.decoration.point)
+    .map((item) => item.decoration.range(item.from, item.to))
+  return Decoration.set(ranges, true)
 }
 
 export function buildLivePreviewDecorations(view: { state: EditorState; viewport?: ScanScope }): DecorationSet {

@@ -84,17 +84,16 @@ describe('source-preserving preview features', () => {
     expect(activeWidgets).toEqual([])
   })
 
-  it('keeps math source ranges laid out and uses only point widgets', () => {
+  it('renders each formula in place of exactly its own source', () => {
     const text = 'Inline $x^2$ and $$\\n y = mx + b\\n$$'
     const state = createState(text)
     const decorations = buildLivePreviewDecorations({ state })
-    const widgets: Array<{ from: number; to: number }> = []
+    const widgets: string[] = []
     decorations.between(0, state.doc.length, (from, to, decoration) => {
-      if (decoration.spec.widget) widgets.push({ from, to })
+      if (decoration.spec.widget) widgets.push(text.slice(from, to))
     })
 
-    expect(widgets.length).toBe(2)
-    expect(widgets.every(({ from, to }) => from === to)).toBe(true)
+    expect(widgets).toEqual(['$x^2$', '$$\\n y = mx + b\\n$$'])
     expect(state.doc.toString()).toBe(text)
   })
 })

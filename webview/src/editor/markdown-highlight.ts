@@ -15,7 +15,6 @@ export const markdownHighlight = HighlightStyle.define([
   { tag: t.link, color: 'var(--inkline-accent-strong)', textDecoration: 'underline', textUnderlineOffset: '3px' },
   { tag: t.url, color: 'var(--inkline-accent)' },
   { tag: t.quote, color: 'var(--inkline-muted)', fontStyle: 'italic' },
-  { tag: t.list, color: 'var(--inkline-accent-strong)' },
   { tag: t.monospace, fontFamily: 'var(--font-mono)', fontSize: '0.9em' },
   { tag: t.processingInstruction, color: 'var(--inkline-subtle)' },
   { tag: t.meta, color: 'var(--inkline-subtle)' },

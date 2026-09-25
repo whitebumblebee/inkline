@@ -67,24 +67,35 @@
   outline: none;
 }
 
-.inkline-math-source,
-.inkline-math-preview-source {
+.inkline-math-source {
   font-family: var(--font-mono);
   font-size: 0.9em;
   color: var(--inkline-accent-strong);
 }
 
+/* Rendered math standing in for its concealed source, taking the source's
+   place in the line. */
 .inkline-math-preview-widget {
   display: inline-block;
-  width: 0;
-  overflow: visible;
-  pointer-events: none;
   white-space: nowrap;
-  vertical-align: middle;
+  cursor: text;
 }
 
-.inkline-math-preview-widget .katex-display {
+.inkline-math-preview-widget.is-block {
+  width: 100%;
+}
+
+.inkline-math-preview-widget .katex-display,
+.inkline-math-block-preview .katex-display {
   margin: 0;
+}
+
+/* A `$$` block on lines of its own, rendered in their place. Spacing is
+   padding, not margin: CodeMirror measures a block widget's border box. */
+.inkline-math-block-preview {
+  padding: 0.5em 0;
+  overflow-x: auto;
+  cursor: text;
 }
 
 .status-bar {
@@ -147,21 +158,6 @@
   padding-top: 0.35em;
 }
 
-.inkline-math-preview-source {
-  color: transparent !important;
-  font-family: var(--font-prose);
-  font-size: 1em;
-  font-style: italic;
-}
-
-.inkline-math-block-source {
-  display: inline-block;
-  padding: 0.2em 0.45em;
-  border: 1px solid var(--inkline-border);
-  border-radius: 4px;
-  background: var(--inkline-panel-raised);
-}
-
 /* Concealed Markdown syntax.
    `display: none` rather than a zero-sized box: CodeMirror resolves a click by
    binary-searching the client rects of the characters on the line, and a
@@ -170,34 +166,26 @@
    marker on a line collapse onto it. A hidden element contributes no rects at
    all, which the search handles correctly. The source text stays in the DOM and
    in the document either way. */
-.inkline-hidden-syntax:not(.inkline-task-marker) {
+.inkline-hidden-syntax {
   display: none;
 }
 
-/* A line whose entire content is concealed (a code fence, a callout header)
-   would otherwise generate no line box at all and collapse to its padding. A
-   zero-width inline box restores the line's natural height without adding
-   anything the coordinate search can trip over - a pseudo-element is not part
-   of the editor's view tree. */
-.cm-line:has(> .inkline-hidden-syntax)::after {
-  content: '';
+/* Stands in for a line whose entire content is concealed (see
+   strutConcealedLines), so the line keeps its height and stays clickable. */
+.inkline-line-strut {
   display: inline-block;
   width: 0;
+  height: 1em;
 }
 
-.cm-activeLine .inkline-hidden-syntax:not(.inkline-task-marker) {
+.cm-activeLine .inkline-hidden-syntax {
   display: inline;
   color: var(--inkline-subtle) !important;
   opacity: 0.55 !important;
 }
 
-.cm-activeLine .inkline-hidden-syntax:not(.inkline-task-marker) * {
+.cm-activeLine .inkline-hidden-syntax * {
   color: var(--inkline-subtle) !important;
-}
-
-.inkline-task-marker.inkline-hidden-syntax {
-  color: transparent !important;
-  opacity: 1 !important;
 }
 
 .inkline-heading-mark,
@@ -211,12 +199,51 @@
   font-weight: 400;
 }
 
-.inkline-task-marker::before {
-  content: '□';
+.inkline-task-marker * {
+  color: inherit !important;
+}
+
+/* The checkbox a `- [ ]` item renders as. Clicking it toggles the source. */
+.inkline-task-checkbox {
   display: inline-block;
-  margin-right: 4px;
-  color: var(--inkline-accent-strong);
-  opacity: 1;
+  position: relative;
+  box-sizing: border-box;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.2em;
+  vertical-align: -0.12em;
+  border: 1.5px solid var(--inkline-subtle);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.inkline-task-checkbox:hover {
+  border-color: var(--inkline-accent-strong);
+}
+
+.inkline-task-checkbox.is-checked {
+  background: var(--inkline-accent-strong);
+  border-color: var(--inkline-accent-strong);
+}
+
+.inkline-task-checkbox.is-checked::after {
+  content: '';
+  position: absolute;
+  left: 30%;
+  top: 10%;
+  width: 28%;
+  height: 55%;
+  border: solid var(--inkline-bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.inkline-task-done,
+.inkline-task-done * {
+  color: var(--inkline-subtle) !important;
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--inkline-subtle) 70%, transparent);
 }
 
 .inkline-highlight {
@@ -425,6 +452,14 @@
   border-left: 2px solid var(--inkline-border);
 }
 
+/* The Markdown highlighter still tokenises these lines - `[a, b]` as a link,
+   `# x` as a heading. None of that applies to YAML. */
+.cm-line.inkline-frontmatter-line * {
+  color: inherit !important;
+  font: inherit !important;
+  text-decoration: none !important;
+}
+
 .cm-line.inkline-frontmatter-first {
   padding-top: 8px;
   border-top-right-radius: 6px;
@@ -529,6 +564,32 @@
 .cm-line.inkline-callout-last {
   padding-bottom: 6px;
   border-bottom-right-radius: 6px;
+}
+
+.inkline-callout-title-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-right: 0.35em;
+  vertical-align: -0.1em;
+  cursor: text;
+}
+
+.inkline-callout-icon {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: var(--callout-color, var(--inkline-accent));
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inkline-callout-title,
+.inkline-callout-title * {
+  color: var(--callout-color, var(--inkline-accent)) !important;
+  font-weight: 600;
+  font-style: normal;
 }
 
 .inkline-callout-note { --callout-color: #58a6ff; }

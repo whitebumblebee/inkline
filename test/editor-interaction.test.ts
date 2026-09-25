@@ -53,8 +53,8 @@ describe('editor interactions', () => {
       ? new editor.ownerDocument.defaultView!.MouseEvent('mousedown', { bubbles: true, clientX: 1, clientY: 1 })
       : editor.ownerDocument.createEvent('MouseEvent')
     editor.dispatchEvent(down)
-    const hidden = editor.querySelector('.inkline-hidden-syntax')
-    expect(hidden).toBeTruthy()
+    // The fence lines are wholly concealed, so each is a strut.
+    expect(editor.querySelectorAll('.inkline-line-strut').length).toBe(2)
 
     editor.ownerDocument.defaultView!.dispatchEvent(new editor.ownerDocument.defaultView!.MouseEvent('mouseup', { bubbles: true }))
     view.destroy()

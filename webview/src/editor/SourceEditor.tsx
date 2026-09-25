@@ -11,6 +11,7 @@ import { codeLanguages } from './code-languages'
 import { markdownEditorTheme, markdownHighlight } from './markdown-highlight'
 import { livePreview, refreshLivePreview } from './live-preview'
 import { tablePreview } from './table-preview'
+import { mathBlockPreview } from './math-preview'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -55,6 +56,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
             syntaxHighlighting(markdownHighlight),
             livePreview,
             tablePreview,
+            mathBlockPreview,
             markdownEditorTheme,
             inklineKeymap,
             EditorView.updateListener.of((update) => {
@@ -73,12 +75,6 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
                 const position = view.posAtCoords({ x: event.clientX, y: event.clientY })
                 if (position === null) return false
                 const line = view.state.doc.lineAt(position)
-                const taskOffset = line.text.search(/\[[ xX]\]/u)
-                if (target.closest('.inkline-task-marker') && taskOffset >= 0 && position >= line.from + taskOffset && position <= line.from + taskOffset + 3) {
-                  const markerFrom = line.from + taskOffset
-                  view.dispatch({ changes: { from: markerFrom, to: markerFrom + 3, insert: line.text.slice(taskOffset, taskOffset + 3).toLowerCase() === '[x]' ? '[ ]' : '[x]' } })
-                  return true
-                }
                 const link = line.text.match(/\[[^\]\n]+\]\(([^)\n]+)\)/u)
                 if (event.metaKey || event.ctrlKey) {
                   if (link && position >= line.from && position <= line.to && view.state.selection.main.empty) {

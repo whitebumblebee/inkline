@@ -4,6 +4,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import { buildLivePreviewDecorations } from '../webview/src/editor/live-preview'
 import { findFrontmatter, findLivePreviewItems } from '../webview/src/editor/live-preview-ranges'
+import { MathPreviewWidget } from '../webview/src/editor/math-preview'
 
 function createState(doc: string, anchor = 0): EditorState {
   return EditorState.create({
@@ -25,7 +26,13 @@ function classesOnLine(state: EditorState, lineNumber: number): string[] {
 function marksIn(state: EditorState, from: number, to: number): string[] {
   const found: string[] = []
   buildLivePreviewDecorations({ state }).between(from, to, (start, end, decoration) => {
-    if (start !== end && decoration.spec.class) found.push(decoration.spec.class)
+    if (start === end) return
+    if (decoration.spec.class) found.push(decoration.spec.class)
+    else if (decoration.spec.widget instanceof MathPreviewWidget) found.push('inkline-math-preview')
+    // A line that is nothing but concealed syntax is replaced whole by a strut.
+    else if (decoration.spec.widget && start === state.doc.lineAt(start).from && end === state.doc.lineAt(start).to) {
+      found.push('inkline-line-strut')
+    }
   })
   return found
 }
@@ -109,7 +116,7 @@ describe('Setext headings', () => {
     expect(classesOnLine(state, 4)).toContain('inkline-h2-line')
     expect(classesOnLine(state, 5)).toContain('inkline-h2-line')
     const underline = state.doc.line(2)
-    expect(marksIn(state, underline.from, underline.to)).toContain('inkline-hidden-syntax')
+    expect(marksIn(state, underline.from, underline.to)).toContain('inkline-line-strut')
   })
 })
 
@@ -140,7 +147,7 @@ describe('horizontal rules', () => {
     const state = createState('Above\n\n---\n\nBelow', 0)
     expect(classesOnLine(state, 3)).toContain('inkline-horizontal-rule-line')
     const rule = state.doc.line(3)
-    expect(marksIn(state, rule.from, rule.to)).toContain('inkline-hidden-syntax')
+    expect(marksIn(state, rule.from, rule.to)).toContain('inkline-line-strut')
   })
 
   it('shows the marker again while the cursor is on it', () => {

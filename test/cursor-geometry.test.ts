@@ -65,14 +65,29 @@ describe('line geometry stays measurable', () => {
    * click past the first concealed marker collapses onto that marker.
    */
   it('removes concealed syntax from layout rather than shrinking it', () => {
-    const rule = /\.inkline-hidden-syntax:not\(\.inkline-task-marker\)\s*\{([^}]*)\}/u.exec(stylesheet)
+    const rule = /\.inkline-hidden-syntax\s*\{([^}]*)\}/u.exec(stylesheet)
     expect(rule).not.toBeNull()
     expect(rule![1]).toMatch(/display\s*:\s*none/u)
     expect(rule![1]).not.toMatch(/font-size\s*:\s*0/u)
   })
 
-  it('keeps a line box on lines whose whole content is concealed', () => {
-    expect(stylesheet).toMatch(/\.cm-line:has\(>\s*\.inkline-hidden-syntax\)::after\s*\{[^}]*content\s*:/u)
+  /**
+   * A line with nothing but concealed syntax gives CodeMirror nothing to map a
+   * click onto, and it throws. Such a line is replaced whole by one widget.
+   */
+  it('replaces lines whose whole content is concealed with a single strut', () => {
+    const doc = 'intro\n\n```bash\ncode\n```\n\n> quote\n>\n> more\n\n---\n\noutro'
+    const state = createState(doc, doc.length)
+    const wholeLines: string[] = []
+    const hiddenLeft: string[] = []
+    buildLivePreviewDecorations({ state }).between(0, doc.length, (from, to, decoration) => {
+      if (decoration.spec.widget && from < to) wholeLines.push(doc.slice(from, to))
+      if (decoration.spec.class === 'inkline-hidden-syntax') hiddenLeft.push(doc.slice(from, to))
+    })
+    expect(wholeLines).toEqual(['```bash', '```', '>', '---'])
+    // Partly concealed lines keep their ordinary hidden markers.
+    expect(hiddenLeft).toEqual(['> ', '> '])
+    expect(stylesheet).toMatch(/\.inkline-line-strut\s*\{[^}]*display\s*:\s*inline-block/u)
   })
 })
 
