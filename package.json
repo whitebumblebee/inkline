@@ -2,7 +2,7 @@
   "name": "inkline",
   "displayName": "Inkline",
   "description": "A focused Markdown editor for VS Code-compatible editors.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "shishirjha",
   "license": "MIT",
   "icon": "media/icon.png",
