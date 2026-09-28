@@ -19,7 +19,8 @@ export function activate(context: vscode.ExtensionContext): void {
     // for keybinding resolution, and the workbench's own undo stack holds the
     // document reload that happens when a file changes on disk - so letting it
     // run would revert someone else's edit to the file. Binding the chords to a
-    // command that does nothing keeps that stack out of it.
+    // command that does nothing keeps that stack out of it. Find and replace are
+    // claimed the same way: the editor's own panel handles them.
     vscode.commands.registerCommand('inkline.handledByEditor', () => undefined),
     vscode.commands.registerCommand('inkline.insertImage', () => provider.insertImage()),
   )

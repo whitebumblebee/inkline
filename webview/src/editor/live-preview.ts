@@ -14,6 +14,7 @@ import {
 } from './live-preview-ranges'
 import { requestImage, resolvedImage } from './image-store'
 import { isDelimiterRow } from './table-preview'
+import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 interface PreviewItem {
   from: number
@@ -534,10 +535,14 @@ function buildDecorations(state: EditorState, scope?: ScanScope): DecorationSet 
     }
   }
 
+  // Inside a merge conflict the file is not really Markdown, so show it as it is.
+  const conflicts = conflictRanges(state)
+  const kept = conflicts.length > 0 ? items.filter((item) => !overlapsConflict(conflicts, item.from, item.to)) : items
+
   // Decoration.set sorts by position *and* side; sorting by position alone can
   // put a line decoration after a widget at the same spot, which is rejected.
   // Empty marks (``, an empty bold) style nothing and are not allowed.
-  const ranges: Range<Decoration>[] = strutConcealedLines(items, state)
+  const ranges: Range<Decoration>[] = strutConcealedLines(kept, state)
     .filter((item) => item.from < item.to || item.decoration.point)
     .map((item) => item.decoration.range(item.from, item.to))
   return Decoration.set(ranges, true)

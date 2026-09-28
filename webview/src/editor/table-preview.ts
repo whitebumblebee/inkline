@@ -1,5 +1,6 @@
 import { StateField, type EditorState, type Extension, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
+import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 export type ColumnAlign = 'left' | 'center' | 'right' | null
 
@@ -218,9 +219,10 @@ interface TableState {
 
 function decorate(state: EditorState, blocks: TableBlock[]): DecorationSet {
   const ranges: Range<Decoration>[] = []
+  const conflicts = conflictRanges(state)
   for (const block of blocks) {
-    // Editing inside the table shows its source instead.
-    if (selectionTouches(state, block.from, block.to)) continue
+    // Editing inside the table, or a merge conflict in it, shows its source instead.
+    if (selectionTouches(state, block.from, block.to) || overlapsConflict(conflicts, block.from, block.to)) continue
     ranges.push(
       Decoration.replace({ widget: new TableWidget(block), block: true }).range(block.from, block.to),
     )

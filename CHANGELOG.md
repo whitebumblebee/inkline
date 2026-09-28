@@ -4,6 +4,22 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-09-29
+
+### Added
+
+- Find and replace: **⌘F** / **Ctrl+F** to find, **⌥⌘F** / **Ctrl+H** to
+  replace. They search the Markdown source, so a replace also reaches text the
+  preview hides, like a link's URL, and moving to a match reveals its Markdown.
+
+### Fixed
+
+- Merge conflicts are shown as plain source instead of being read as Markdown.
+  Before, the `=======` line turned the text above it into a heading and
+  `>>>>>>>` into nested quotes. Each conflict now has coloured bands for the
+  current and incoming changes, and **Accept Current**, **Accept Incoming** and
+  **Accept Both** above it.
+
 ## [0.1.1] - 2026-09-25
 
 ### Fixed

@@ -2,6 +2,7 @@ import { defaultKeymap, history, historyKeymap, indentLess, indentMore, redo, un
 import { closeBracketsKeymap } from '@codemirror/autocomplete'
 import { deleteMarkupBackward, insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 import { syntaxTree } from '@codemirror/language'
+import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { Prec, type Extension } from '@codemirror/state'
 import { keymap, type Command } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
@@ -227,6 +228,13 @@ const outdentListCommand: Command = (view) => {
   return indentLess(view)
 }
 
+/** Opens find and replace with the caret in the replace field, as VS Code's shortcut does. */
+const openReplaceCommand: Command = (view) => {
+  openSearchPanel(view)
+  view.dom.querySelector<HTMLInputElement>('.cm-search input[name=replace]')?.select()
+  return true
+}
+
 /**
  * `markdown({ addKeymap: true })` installs its own Enter and Backspace bindings,
  * and language extensions are ordered ahead of this one - so without raising the
@@ -238,6 +246,9 @@ export const inklineKeymap: Extension = [
   // The undo bindings below are only meaningful with the history field present,
   // so they travel together.
   history(),
+  // Find and replace work on the source text, so they also match syntax the
+  // live preview hides; moving to a match reveals the Markdown around it.
+  search({ top: true }),
   Prec.highest(keymap.of([
     { key: 'Enter', run: (view) => enterCodeBlockCommand(view) || enterListCommand(view) || insertNewlineContinueMarkup({ state: view.state, dispatch: view.dispatch }) },
     { key: 'Backspace', run: (view) => deleteMarkupBackward({ state: view.state, dispatch: view.dispatch }) },
@@ -256,8 +267,10 @@ export const inklineKeymap: Extension = [
     { key: 'Mod-z', run: (view) => { undo(view); return true }, preventDefault: true },
     { key: 'Mod-Shift-z', run: (view) => { redo(view); return true }, preventDefault: true },
     { key: 'Mod-y', run: (view) => { redo(view); return true }, preventDefault: true },
+    { key: 'Ctrl-h', mac: 'Mod-Alt-f', run: openReplaceCommand, preventDefault: true },
   ])),
   keymap.of([
+    ...searchKeymap,
     ...closeBracketsKeymap,
     ...historyKeymap,
     ...defaultKeymap,

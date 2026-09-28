@@ -12,6 +12,7 @@ import { markdownEditorTheme, markdownHighlight } from './markdown-highlight'
 import { livePreview, refreshLivePreview } from './live-preview'
 import { tablePreview } from './table-preview'
 import { mathBlockPreview } from './math-preview'
+import { mergeConflicts } from './merge-conflicts'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -54,6 +55,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
               addKeymap: true,
             }),
             syntaxHighlighting(markdownHighlight),
+            mergeConflicts,
             livePreview,
             tablePreview,
             mathBlockPreview,

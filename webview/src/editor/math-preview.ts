@@ -3,6 +3,7 @@ import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemir
 import katex from 'katex'
 import { findMathRanges, type MathRange } from './math-ranges'
 import { selectionTouchesRange } from './live-preview-ranges'
+import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 function renderLatex(node: HTMLElement, latex: string, displayMode: boolean): void {
   try {
@@ -109,8 +110,9 @@ interface MathBlockState {
 
 function decorate(state: EditorState, blocks: MathBlock[]): DecorationSet {
   const ranges: Range<Decoration>[] = []
+  const conflicts = conflictRanges(state)
   for (const block of blocks) {
-    if (selectionTouchesRange(state, block.from, block.to)) continue
+    if (selectionTouchesRange(state, block.from, block.to) || overlapsConflict(conflicts, block.from, block.to)) continue
     ranges.push(Decoration.replace({ widget: new MathBlockWidget(block), block: true }).range(block.from, block.to))
   }
   return Decoration.set(ranges, true)

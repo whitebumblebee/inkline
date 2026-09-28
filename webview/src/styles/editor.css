@@ -598,6 +598,148 @@
 .inkline-callout-warning { --callout-color: #d29922; }
 .inkline-callout-caution { --callout-color: #f85149; }
 
+/* Find and replace. The panel belongs to CodeMirror; these rules dress it in
+   Inkline's colours and centre it over the writing column. */
+.source-editor .cm-editor .cm-panels {
+  background: var(--inkline-panel);
+  color: var(--inkline-text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.source-editor .cm-editor .cm-panels-top { border-bottom: 1px solid var(--inkline-border); }
+
+.source-editor .cm-editor .cm-search {
+  max-width: calc(var(--inkline-measure) + 3rem);
+  margin: 0 auto;
+  padding: 8px 1.5rem 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.source-editor .cm-editor .cm-search br { flex-basis: 100%; height: 0; content: ''; }
+
+.source-editor .cm-editor .cm-textfield {
+  min-width: 14rem;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--inkline-border);
+  border-radius: 6px;
+  background: var(--inkline-bg);
+  color: var(--inkline-text);
+  font: 13px var(--font-ui);
+}
+
+.source-editor .cm-editor .cm-textfield:focus {
+  outline: none;
+  border-color: var(--inkline-accent);
+}
+
+.source-editor .cm-editor .cm-button {
+  margin: 0;
+  padding: 3px 10px;
+  border: 1px solid var(--inkline-border);
+  border-radius: 6px;
+  background: var(--inkline-panel-raised);
+  background-image: none;
+  color: var(--inkline-text);
+  font: 12px var(--font-ui);
+  cursor: pointer;
+}
+
+.source-editor .cm-editor .cm-button:hover { border-color: var(--inkline-accent); }
+
+.source-editor .cm-editor .cm-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--inkline-muted);
+  font-size: 12px;
+}
+
+.source-editor .cm-editor .cm-search input[type=checkbox] { accent-color: var(--inkline-accent); margin: 0; }
+
+.source-editor .cm-editor .cm-search [name=close] {
+  position: static;
+  margin-left: auto;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--inkline-muted);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.source-editor .cm-editor .cm-searchMatch {
+  background: color-mix(in srgb, var(--inkline-accent) 22%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--inkline-accent) 45%, transparent);
+  border-radius: 2px;
+}
+
+.source-editor .cm-editor .cm-searchMatch-selected {
+  background: color-mix(in srgb, var(--inkline-accent) 48%, transparent);
+  outline-color: var(--inkline-accent-strong);
+}
+
+/* Merge conflicts are shown as source, in bands like VS Code's: current
+   changes in green, incoming in blue, the common ancestor in grey. */
+.cm-line.inkline-conflict-line {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding-inline: 0.75rem;
+  --conflict-current: #3fb950;
+  --conflict-incoming: #58a6ff;
+  --conflict-base: #8b949e;
+}
+
+/* The highlighter still reads the markers as Markdown - the side above
+   `=======` as a heading, `>>>>>>>` as a quote - so its fonts, weights and
+   italics are dropped here and the block reads as plain source. */
+.cm-line.inkline-conflict-line * {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  font-style: inherit !important;
+}
+
+.cm-line.inkline-conflict-current { background: color-mix(in srgb, var(--conflict-current) 12%, transparent); }
+.cm-line.inkline-conflict-incoming { background: color-mix(in srgb, var(--conflict-incoming) 12%, transparent); }
+.cm-line.inkline-conflict-base { background: color-mix(in srgb, var(--conflict-base) 12%, transparent); }
+
+.cm-line.inkline-conflict-marker {
+  color: var(--inkline-muted);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--inkline-border) 55%, transparent);
+}
+
+.cm-line.inkline-conflict-current-marker { background: color-mix(in srgb, var(--conflict-current) 30%, transparent); }
+.cm-line.inkline-conflict-incoming-marker { background: color-mix(in srgb, var(--conflict-incoming) 30%, transparent); }
+.cm-line.inkline-conflict-base-marker { background: color-mix(in srgb, var(--conflict-base) 30%, transparent); }
+
+.inkline-conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 0.6rem 0 0.25rem;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.inkline-conflict-actions button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--inkline-muted);
+  cursor: pointer;
+}
+
+.inkline-conflict-actions button:hover {
+  color: var(--inkline-accent-strong);
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .editor-header { align-items: flex-start; flex-direction: column; gap: 10px; padding-block: 12px; }
   .writing-column { width: min(100% - 24px, var(--inkline-measure)); padding-top: 1.5rem; }

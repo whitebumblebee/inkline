@@ -76,8 +76,12 @@ set apart as a small metadata block.
 | Highlight | ⌘⇧8 | Ctrl+Shift+8 |
 | Comment | ⌘/ | Ctrl+/ |
 | Indent / outdent a list item | Tab / ⇧Tab | Tab / Shift+Tab |
+| Find | ⌘F | Ctrl+F |
+| Find and replace | ⌥⌘F | Ctrl+H |
 
-Undo, redo and save work the way they do everywhere else in VS Code.
+Find and replace search the Markdown source, so they also match text the
+preview hides, like a link's URL. Moving to a match shows the Markdown around
+it. Undo, redo and save work the way they do everywhere else in VS Code.
 
 ## Your file, always
 
@@ -86,6 +90,11 @@ Inkline edits the same document VS Code does. Saving, the unsaved-changes dot,
 it's open (a `git pull`, another editor), Inkline shows the new contents and
 keeps your cursor where it was. Undo only goes through your own edits, so it
 never undoes a change that came from outside.
+
+If a merge leaves conflict markers in the file, Inkline stops treating that
+part as Markdown. Each conflict is shown as plain source, with the current and
+incoming changes in coloured bands and **Accept Current**, **Accept Incoming**
+and **Accept Both** above it, the same choices VS Code's text editor offers.
 
 Inkline is only an editor. It doesn't have Obsidian's graph, backlinks or
 plugins.
