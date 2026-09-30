@@ -4,6 +4,19 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-09-30
+
+### Fixed
+
+- Pressing **Enter** at the end of a quoted line no longer deletes its trailing
+  spaces. Two trailing spaces are a hard line break, so removing them changed
+  how the file renders while the editor looked the same.
+- Accepting a merge conflict is always its own undo step, so one undo restores
+  the markers exactly, even right after typing.
+- Conflict markers inside a code block, such as an example in a guide to Git,
+  are left as code instead of getting **Accept** buttons that would delete part
+  of the example.
+
 ## [0.1.2] - 2026-09-29
 
 ### Added

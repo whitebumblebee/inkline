@@ -3,7 +3,7 @@ import { closeBracketsKeymap } from '@codemirror/autocomplete'
 import { deleteMarkupBackward, insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
 import { syntaxTree } from '@codemirror/language'
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
-import { Prec, type Extension } from '@codemirror/state'
+import { ChangeSet, EditorSelection, Prec, type Extension } from '@codemirror/state'
 import { keymap, type Command } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { indentMarkdownLine, outdentMarkdownLine } from './markdown-editing'
@@ -228,6 +228,45 @@ const outdentListCommand: Command = (view) => {
   return indentLess(view)
 }
 
+/**
+ * CodeMirror's markup continuation (used here for blockquotes) deletes the
+ * whitespace before the cursor when it starts the next line. Two trailing
+ * spaces are a hard line break in Markdown, so deleting them changes what the
+ * file renders as, while the preview looks the same. Put back what it removed.
+ */
+const continueMarkupCommand: Command = (view) => {
+  const { state } = view
+  const cursor = state.selection.main
+  const line = state.doc.lineAt(cursor.head)
+  const before = line.text.slice(0, cursor.head - line.from)
+  const trailing = state.selection.ranges.length === 1 && cursor.empty
+    ? /[ \t]+$/u.exec(before)?.[0] ?? ''
+    : ''
+  // Only after text: the space that follows a bare `>` is markup, not a break.
+  const afterText = /[^\s>]/u.test(before.slice(0, before.length - trailing.length))
+  return insertNewlineContinueMarkup({
+    state,
+    dispatch: (transaction) => {
+      let restoreAt: number | null = null
+      transaction.changes.iterChanges((fromA, toA, fromB, _toB, inserted) => {
+        const stripped = fromA === cursor.head - trailing.length && toA === cursor.head
+        if (trailing && afterText && stripped && inserted.sliceString(0, state.lineBreak.length) === state.lineBreak) restoreAt = fromB
+      })
+      if (restoreAt === null) {
+        view.dispatch(transaction)
+        return
+      }
+      const restore = ChangeSet.of([{ from: restoreAt, insert: trailing }], transaction.newDoc.length)
+      view.dispatch({
+        changes: transaction.changes.compose(restore),
+        selection: EditorSelection.cursor(transaction.newSelection.main.head + trailing.length),
+        scrollIntoView: true,
+        userEvent: 'input',
+      })
+    },
+  })
+}
+
 /** Opens find and replace with the caret in the replace field, as VS Code's shortcut does. */
 const openReplaceCommand: Command = (view) => {
   openSearchPanel(view)
@@ -250,7 +289,7 @@ export const inklineKeymap: Extension = [
   // live preview hides; moving to a match reveals the Markdown around it.
   search({ top: true }),
   Prec.highest(keymap.of([
-    { key: 'Enter', run: (view) => enterCodeBlockCommand(view) || enterListCommand(view) || insertNewlineContinueMarkup({ state: view.state, dispatch: view.dispatch }) },
+    { key: 'Enter', run: (view) => enterCodeBlockCommand(view) || enterListCommand(view) || continueMarkupCommand(view) },
     { key: 'Backspace', run: (view) => deleteMarkupBackward({ state: view.state, dispatch: view.dispatch }) },
     { key: 'Tab', run: indentListCommand },
     { key: 'Shift-Tab', run: outdentListCommand },

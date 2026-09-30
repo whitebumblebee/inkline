@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { history, redo, undo } from '@codemirror/commands'
 import { EditorState, Text } from '@codemirror/state'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
@@ -52,6 +53,23 @@ describe('finding merge conflicts', () => {
   it('finds the common ancestor section written by the diff3 style', () => {
     const doc = Text.of(['<<<<<<< ours', 'a', '||||||| base', 'b', '=======', 'c', '>>>>>>> theirs'])
     expect(findConflicts(doc)).toMatchObject([{ startLine: 1, baseLine: 3, separatorLine: 5, endLine: 7 }])
+  })
+
+  it('leaves an example conflict inside a code block alone', () => {
+    const example = ['```text', '<<<<<<< HEAD', 'a', '=======', 'b', '>>>>>>> x', '```']
+    expect(findConflicts(Text.of(example))).toEqual([])
+    expect(findConflicts(Text.of(['~~~', ...example.slice(1, -1), '~~~']))).toEqual([])
+    // A closing fence of the other kind does not end the block.
+    expect(findConflicts(Text.of(['````', '~~~', ...example.slice(1, -1), '````']))).toEqual([])
+  })
+
+  it('still finds a real conflict before, after or around a code block', () => {
+    const conflict = ['<<<<<<< HEAD', 'a', '=======', 'b', '>>>>>>> x']
+    expect(findConflicts(Text.of(['```', 'code', '```', ...conflict]))).toHaveLength(1)
+    expect(findConflicts(Text.of([...conflict, '```', 'code', '```']))).toHaveLength(1)
+    // One side adds a code block: the fence is part of the conflict.
+    const addsFence = ['<<<<<<< HEAD', '```js', 'one()', '=======', 'two()', '>>>>>>> x', '```']
+    expect(findConflicts(Text.of(addsFence))).toHaveLength(1)
   })
 
   it('ignores Markdown that only looks like part of a conflict', () => {
@@ -129,5 +147,40 @@ describe('live preview around a merge conflict', () => {
     expect(view.state.doc.toString()).toBe('# Notes\n\nShip on Friday.\n\n## After')
     expect(view.dom.querySelector('.inkline-conflict-actions')).toBeNull()
     view.destroy()
+  })
+
+  it('keeps the current side first for Accept Both, as Git and VS Code do', () => {
+    cleanups.push(installDom())
+    const doc = ['<<<<<<< HEAD', 'ours 1', 'ours 2', '=======', 'theirs 1', 'theirs 2', '>>>>>>> x'].join('\n')
+    const { view } = createEditor(doc, [mergeConflicts])
+    view.dom.querySelectorAll<HTMLButtonElement>('.inkline-conflict-actions button')[2].click()
+    expect(view.state.doc.toString()).toBe('ours 1\nours 2\ntheirs 1\ntheirs 2')
+    view.destroy()
+  })
+
+  it('restores the markers byte for byte with one undo, for every choice', () => {
+    cleanups.push(installDom())
+    const docs = [
+      CONFLICT,
+      ['a', '<<<<<<< HEAD', '=======', 'b', '>>>>>>> x', 'c'].join('\n'),
+      ['<<<<<<< ours', 'a', '||||||| base', 'b', '=======', 'c', '>>>>>>> theirs'].join('\n'),
+      ['x', '<<<<<<< HEAD', 'a', '=======', '>>>>>>> y'].join('\n'),
+    ]
+    for (const doc of docs) {
+      for (const index of [0, 1, 2]) {
+        const { view } = createEditor(doc, [history(), mergeConflicts])
+        // Typing just before the click must stay a separate undo step.
+        view.dispatch({ changes: { from: view.state.doc.length, insert: 'T' }, userEvent: 'input.type' })
+        const before = view.state.doc.toString()
+        view.dom.querySelectorAll<HTMLButtonElement>('.inkline-conflict-actions button')[index].click()
+        expect(view.state.doc.toString()).not.toBe(before)
+        undo(view)
+        expect(view.state.doc.toString()).toBe(before)
+        redo(view)
+        undo(view)
+        expect(view.state.doc.toString()).toBe(before)
+        view.destroy()
+      }
+    }
   })
 })

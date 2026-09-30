@@ -1,3 +1,4 @@
+import { isolateHistory } from '@codemirror/commands'
 import { StateField, type EditorState, type Extension, type Range, type Text } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
@@ -22,23 +23,41 @@ const START = /^<{7}(?:\s|$)/u
 const BASE = /^\|{7}(?:\s|$)/u
 const SEPARATOR = /^={7}\s*$/u
 const END = /^>{7}(?:\s|$)/u
+const FENCE = /^ {0,3}(`{3,}|~{3,})/u
 
 /**
  * Only complete blocks count: a start, a separator and an end, in that order.
- * The scan works on raw lines, like VS Code's own conflict detection, so a
- * conflict inside a code block is found too.
+ *
+ * Markers that sit wholly inside one fenced code block are an example - a guide
+ * to Git, say - not a conflict, so they are left alone: offering Accept there
+ * would delete part of the example. A conflict with a fence line inside it is
+ * still a conflict, since one side is adding or removing that code block.
  */
 export function findConflicts(doc: Text): ConflictBlock[] {
   const blocks: ConflictBlock[] = []
   let start: number | null = null
   let base: number | null = null
   let separator: number | null = null
+  /** The opening fence of the code block the scan is in, if any. */
+  let fence: string | null = null
+  let startsInCode = false
+  let crossesFence = false
   for (let lineNo = 1; lineNo <= doc.lines; lineNo += 1) {
     const text = doc.line(lineNo).text
+    const fenceMatch = FENCE.exec(text)
+    if (fenceMatch) {
+      if (start !== null) crossesFence = true
+      const marks = fenceMatch[1]
+      if (fence === null) fence = marks
+      else if (marks[0] === fence[0] && marks.length >= fence.length && text.trim() === marks) fence = null
+      continue
+    }
     if (START.test(text)) {
       start = lineNo
       base = null
       separator = null
+      startsInCode = fence !== null
+      crossesFence = false
     } else if (start === null) {
       continue
     } else if (BASE.test(text) && separator === null && base === null) {
@@ -46,6 +65,10 @@ export function findConflicts(doc: Text): ConflictBlock[] {
     } else if (SEPARATOR.test(text) && separator === null) {
       separator = lineNo
     } else if (END.test(text) && separator !== null) {
+      if (startsInCode && !crossesFence) {
+        start = null
+        continue
+      }
       blocks.push({
         from: doc.line(start).from,
         to: doc.line(lineNo).to,
@@ -100,7 +123,13 @@ class ConflictActionsWidget extends WidgetType {
       button.addEventListener('click', () => {
         const block = findConflicts(view.state.doc).find((found) => found.startLine === this.block.startLine)
         if (!block) return
-        view.dispatch({ changes: resolveConflict(view.state.doc, block, choice), userEvent: 'input.resolve' })
+        // Its own undo step, never merged with typing, so one undo restores the
+        // conflict exactly as Git wrote it.
+        view.dispatch({
+          changes: resolveConflict(view.state.doc, block, choice),
+          userEvent: 'input.resolve',
+          annotations: isolateHistory.of('full'),
+        })
         view.focus()
       })
       bar.appendChild(button)
