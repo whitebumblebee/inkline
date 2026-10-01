@@ -4,6 +4,26 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-02
+
+### Added
+
+- HTML in Markdown files is drawn as HTML: a README's centred logo, `<details>`
+  blocks, tables and links. Like tables, a block shows its source while the
+  caret is in it. The HTML is rebuilt from a short allowlist, so scripts,
+  styles and frames never run or load; a block holding only those stays as
+  source. Images from the workspace show; remote images show their alt text.
+- Inline `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<i>`, `<u>`, `<s>` and
+  `<small>` are formatted, their tags hidden like `**` until the caret reaches them.
+
+### Fixed
+
+- A Markdown table inside a code block, such as an example of table syntax, is
+  shown as code instead of being drawn as a table.
+- `[[wikilinks]]` inside inline code or code blocks are no longer styled as links.
+- A file that starts with an HTML block or a table opens with it drawn: the
+  caret starts on the line after it instead of inside it.
+
 ## [0.1.3] - 2026-09-30
 
 ### Fixed

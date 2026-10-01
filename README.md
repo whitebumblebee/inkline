@@ -62,6 +62,12 @@ to pick one: Inkline copies it into an `.inkline-assets` folder in your
 workspace and writes the link for you. Images from the web show as their
 Markdown link, not a preview.
 
+**HTML.** HTML blocks are drawn as HTML, like a README's centred logo or a
+`<details>` block; click one to edit its source. Only safe, presentational
+HTML is drawn: scripts, styles and frames never run, and remote images show
+their alt text. Inline `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<i>`, `<u>`,
+`<s>` and `<small>` are formatted in place.
+
 **Everything else.** Blockquotes, horizontal rules, `<!-- comments -->` and
 `%% comments %%` are all handled, and YAML frontmatter at the top of a file is
 set apart as a small metadata block.

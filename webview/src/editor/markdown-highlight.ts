@@ -31,6 +31,11 @@ export const markdownHighlight = HighlightStyle.define([
   { tag: t.operator, color: '#89ddff' },
   { tag: t.punctuation, color: 'var(--inkline-muted)' },
   { tag: t.invalid, color: '#ff5370' },
+  // HTML tags in Markdown source.
+  { tag: t.tagName, color: '#f07178' },
+  { tag: t.attributeName, color: '#ffcb6b' },
+  { tag: t.attributeValue, color: '#c3e88d' },
+  { tag: t.angleBracket, color: '#89ddff' },
 ])
 
 export const markdownEditorTheme = EditorView.theme({

@@ -13,6 +13,7 @@ import { livePreview, refreshLivePreview } from './live-preview'
 import { tablePreview } from './table-preview'
 import { mathBlockPreview } from './math-preview'
 import { mergeConflicts } from './merge-conflicts'
+import { htmlPreview, openingCaret } from './html-preview'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -58,6 +59,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
             mergeConflicts,
             livePreview,
             tablePreview,
+            htmlPreview,
             mathBlockPreview,
             markdownEditorTheme,
             inklineKeymap,
@@ -96,6 +98,8 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
           changes: { from: 0, to: view.state.doc.length, insert: valueRef.current },
         })
       }
+      const caret = openingCaret(view.state)
+      if (caret > 0) view.dispatch({ selection: { anchor: caret } })
 
       // Land the caret in the note so it is ready to type into on open. A
       // webview can be created before it is shown - and an editor restored into

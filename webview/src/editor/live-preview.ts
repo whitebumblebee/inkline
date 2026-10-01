@@ -6,6 +6,7 @@ import { MathPreviewWidget, ownsLines } from './math-preview'
 import {
   findCodeRanges,
   findFrontmatter,
+  findSourceBlocks,
   findLivePreviewItems,
   insideCodeRange,
   selectionTouchesRange,
@@ -356,6 +357,13 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
         items.push(hide(item.closeFrom, item.closeTo))
       }
       break
+    case 'html-inline':
+      if (item.hidden) {
+        items.push(hide(item.openFrom, item.openTo))
+        items.push(hide(item.closeFrom, item.closeTo))
+        if (item.openTo < item.closeFrom) items.push(mark(item.openTo, item.closeFrom, `inkline-html-${item.style}`))
+      }
+      break
     case 'inline-code':
       if (item.hidden) {
         items.push(hide(item.openFrom, item.openTo))
@@ -456,10 +464,13 @@ function lineIsDelimiter(state: EditorState, lineNo: number): boolean {
 function addTableDecorations(items: PreviewItem[], state: EditorState, scope: ScanScope, skipBefore: number): void {
   const firstLine = state.doc.lineAt(scope.from).number
   const lastLine = state.doc.lineAt(scope.to).number
+  const source = findSourceBlocks(state, scope)
   for (let lineNo = firstLine; lineNo <= lastLine; lineNo += 1) {
     if (!isTableRow(state, lineNo)) continue
     const line = state.doc.line(lineNo)
     if (line.from <= skipBefore) continue
+    // Pipe rows in a code block are text, not a table.
+    if (insideCodeRange(source, line.from, line.to)) continue
     let className = 'inkline-table-line'
     if (lineIsDelimiter(state, lineNo)) className += ' inkline-table-delimiter'
     if (!isTableRow(state, lineNo - 1)) className += ' inkline-table-first'

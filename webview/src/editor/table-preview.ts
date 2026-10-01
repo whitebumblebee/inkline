@@ -1,6 +1,8 @@
 import { StateField, type EditorState, type Extension, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
+import { syntaxTree } from '@codemirror/language'
+import { findSourceBlocks } from './live-preview-ranges'
 
 export type ColumnAlign = 'left' | 'center' | 'right' | null
 
@@ -231,7 +233,9 @@ function decorate(state: EditorState, blocks: TableBlock[]): DecorationSet {
 }
 
 function buildTableState(state: EditorState): TableState {
-  const blocks = findTableBlocks(state)
+  // Pipe rows in a code block - a table shown as an example - are text.
+  const source = findSourceBlocks(state)
+  const blocks = findTableBlocks(state).filter((block) => !source.some((range) => block.from <= range.to && block.to >= range.from))
   return { blocks, decorations: decorate(state, blocks) }
 }
 
@@ -240,14 +244,18 @@ function buildTableState(state: EditorState): TableState {
  * requires decorations that span line breaks to come from a state field rather
  * than a view plugin - the viewport cannot be computed without knowing them.
  *
- * The scan looks at every line, so it runs only when the document changes;
- * moving the caret reuses the blocks it found and just decides which of them
- * are being edited.
+ * The scan looks at every line, so it runs only when the document or its
+ * syntax tree changes; moving the caret reuses the blocks it found and just
+ * decides which of them are being edited.
  */
 const tableField = StateField.define<TableState>({
   create: (state) => buildTableState(state),
   update(value, transaction) {
-    if (transaction.docChanged) return buildTableState(transaction.state)
+    // Long files are parsed in the background; a code block further down is
+    // recognised once the tree reaches it.
+    if (transaction.docChanged || syntaxTree(transaction.startState) !== syntaxTree(transaction.state)) {
+      return buildTableState(transaction.state)
+    }
     if (!transaction.selection) return value
     return { blocks: value.blocks, decorations: decorate(transaction.state, value.blocks) }
   },

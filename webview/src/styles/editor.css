@@ -598,6 +598,54 @@
 .inkline-callout-warning { --callout-color: #d29922; }
 .inkline-callout-caution { --callout-color: #f85149; }
 
+/* Raw HTML blocks drawn as HTML (a README's centred logo, a <details> block).
+   Text keeps the page's own type; images never overflow the column. */
+.inkline-html-block {
+  font-family: var(--font-writing);
+  line-height: 1.6;
+  padding: 0.25rem 0;
+  cursor: text;
+}
+
+.inkline-html-block img { max-width: 100%; height: auto; vertical-align: middle; }
+.inkline-html-block [data-url] { color: var(--inkline-accent-strong); text-decoration: underline; text-underline-offset: 3px; }
+.inkline-html-block p, .inkline-html-block ul, .inkline-html-block ol { margin: 0.4em 0; }
+.inkline-html-block table { border-collapse: collapse; }
+.inkline-html-block th, .inkline-html-block td { border: 1px solid var(--inkline-border); padding: 0.3em 0.6em; }
+.inkline-html-block kbd {
+  font: 0.85em var(--font-mono);
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--inkline-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+.inkline-html-block summary { cursor: pointer; }
+
+/* Inline formatting tags in prose (<kbd>, <sub>…) once their tags are hidden. */
+.inkline-html-b { font-weight: 700; }
+.inkline-html-i { font-style: italic; }
+.inkline-html-u { text-decoration: underline; text-underline-offset: 3px; }
+.inkline-html-s { text-decoration: line-through; color: var(--inkline-muted); }
+.inkline-html-sub { vertical-align: sub; font-size: 0.75em; }
+.inkline-html-sup { vertical-align: super; font-size: 0.75em; }
+.inkline-html-small { font-size: 0.85em; }
+.inkline-html-mark { background: color-mix(in srgb, var(--inkline-accent) 30%, transparent); border-radius: 2px; }
+.inkline-html-kbd {
+  font: 0.85em var(--font-mono);
+  padding: 0.05em 0.35em;
+  border: 1px solid var(--inkline-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.inkline-html-image-missing {
+  color: var(--inkline-muted);
+  font-size: 0.85em;
+  border: 1px dashed var(--inkline-border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+}
+
 /* Find and replace. The panel belongs to CodeMirror; these rules dress it in
    Inkline's colours and centre it over the writing column. */
 .source-editor .cm-editor .cm-panels {

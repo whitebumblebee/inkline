@@ -10,6 +10,12 @@ const requested = new Set<string>()
 const failed = new Set<string>()
 const listeners = new Set<() => void>()
 let counter = 0
+/** Goes up whenever an image resolves or fails, so previews holding images can tell they are stale. */
+let version = 0
+
+export function imageVersion(): number {
+  return version
+}
 
 export function isRemoteSource(source: string): boolean {
   return /^(?:[a-z][a-z\d+\-.]*:|\/\/)/iu.test(source)
@@ -35,12 +41,14 @@ export function setResolvedImage(source: string, uri: string): void {
   if (resolved.get(source) === uri) return
   resolved.set(source, uri)
   failed.delete(source)
+  version += 1
   for (const listener of listeners) listener()
 }
 
 export function markImageUnavailable(source: string): void {
   if (failed.has(source)) return
   failed.add(source)
+  version += 1
   for (const listener of listeners) listener()
 }
 

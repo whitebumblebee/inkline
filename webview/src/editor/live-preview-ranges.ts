@@ -127,6 +127,58 @@ export interface ImageRange {
   hidden: boolean
 }
 
+/** A pair of inline formatting tags, such as `<kbd>Ctrl</kbd>`, in a Markdown file. */
+export interface InlineHtmlRange {
+  type: 'html-inline'
+  /** The class the content gets: `kbd`, `b`, `i`, `u`, `s`, `sub`, `sup`, `mark` or `small`. */
+  style: string
+  openFrom: number
+  openTo: number
+  closeFrom: number
+  closeTo: number
+  hidden: boolean
+}
+
+/** Inline tags drawn as formatting, by the style each one gets. Anything else stays as source. */
+const INLINE_HTML_STYLES: Record<string, string> = {
+  b: 'b', strong: 'b', i: 'i', em: 'i', u: 'u', ins: 'u', s: 's', del: 's', strike: 's',
+  kbd: 'kbd', sub: 'sub', sup: 'sup', mark: 'mark', small: 'small',
+}
+
+/**
+ * Pairs opening and closing tags within one paragraph or heading. Tags are
+ * hidden like `**` markers, never inserted as HTML, so this costs nothing to
+ * draw and cannot run or load anything.
+ */
+function pairInlineHtml(state: EditorState, tags: { from: number; to: number; parent: number }[]): InlineHtmlRange[] {
+  const open = new Map<string, { from: number; to: number }[]>()
+  const pairs: InlineHtmlRange[] = []
+  for (const tag of tags) {
+    const text = state.doc.sliceString(tag.from, tag.to)
+    const opening = /^<([a-z]+)(?:\s[^>]*)?>$/iu.exec(text)
+    const closing = /^<\/([a-z]+)\s*>$/iu.exec(text)
+    const name = (opening ?? closing)?.[1].toLowerCase()
+    if (!name || !(name in INLINE_HTML_STYLES) || text.endsWith('/>')) continue
+    const key = `${tag.parent}:${name}`
+    if (opening) {
+      open.set(key, [...(open.get(key) ?? []), tag])
+      continue
+    }
+    const start = open.get(key)?.pop()
+    if (!start) continue
+    pairs.push({
+      type: 'html-inline',
+      style: INLINE_HTML_STYLES[name],
+      openFrom: start.from,
+      openTo: start.to,
+      closeFrom: tag.from,
+      closeTo: tag.to,
+      hidden: !selectionTouchesRange(state, start.from, tag.to),
+    })
+  }
+  return pairs
+}
+
 export interface FrontmatterRange {
   type: 'frontmatter'
   from: number
@@ -147,6 +199,7 @@ export type LivePreviewItem =
   | HrRange
   | ImageRange
   | FrontmatterRange
+  | InlineHtmlRange
 
 export interface ItemScope {
   from: number
@@ -180,6 +233,26 @@ export function findCodeRanges(state: EditorState, scope?: ItemScope): CodeRange
   return ranges
 }
 
+/**
+ * Code blocks, fenced and indented. Unlike `findCodeRanges` this leaves out
+ * inline code, so a table row holding `` `code` `` still counts as a row.
+ */
+export function findSourceBlocks(state: EditorState, scope?: ItemScope): CodeRange[] {
+  const ranges: CodeRange[] = []
+  syntaxTree(state).iterate({
+    from: scope?.from,
+    to: scope?.to,
+    enter(node) {
+      if (node.name === 'FencedCode' || node.name === 'CodeBlock') {
+        ranges.push({ from: node.from, to: node.to })
+        return false
+      }
+      return undefined
+    },
+  })
+  return ranges
+}
+
 export function insideCodeRange(ranges: readonly CodeRange[], from: number, to: number): boolean {
   for (const range of ranges) if (from < range.to && to > range.from) return true
   return false
@@ -206,6 +279,7 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
   const doc = state.doc
   const scanFrom = scope ? doc.lineAt(Math.max(0, Math.min(scope.from, doc.length))).from : 0
   const scanTo = scope ? doc.lineAt(Math.max(0, Math.min(scope.to, doc.length))).to : doc.length
+  const htmlTags: { from: number; to: number; parent: number }[] = []
 
   syntaxTree(state).iterate({
     from: scanFrom,
@@ -495,6 +569,11 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
         }
       }
 
+      // 9c. Inline HTML tags, paired up after the walk
+      else if (node.name === 'HTMLTag') {
+        htmlTags.push({ from: node.from, to: node.to, parent: node.node.parent?.from ?? -1 })
+      }
+
       // 10. Horizontal Rule
       else if (node.name === 'HorizontalRule') {
         const line = doc.lineAt(node.from)
@@ -509,13 +588,18 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
     },
   })
 
-  // 11. WikiLinks ([[target]] or [[target|alias]])
+  items.push(...pairInlineHtml(state, htmlTags))
+
+  // 11. WikiLinks ([[target]] or [[target|alias]]), outside code
   const docText = doc.sliceString(scanFrom, scanTo)
   const wikiRegex = /\[\[([^\]|\n]+)(?:\|([^\]\n]+))?\]\]/g
   let wikiMatch: RegExpExecArray | null
+  let code: CodeRange[] | null = null
   while ((wikiMatch = wikiRegex.exec(docText)) !== null) {
     const from = scanFrom + wikiMatch.index
     const to = from + wikiMatch[0].length
+    code ??= findCodeRanges(state, { from: scanFrom, to: scanTo })
+    if (insideCodeRange(code, from, to)) continue
     const touches = selectionTouchesRange(state, from, to)
     const target = wikiMatch[1].trim()
     const label = (wikiMatch[2] ? wikiMatch[2] : wikiMatch[1]).trim()
