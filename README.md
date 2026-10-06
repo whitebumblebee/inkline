@@ -84,10 +84,19 @@ set apart as a small metadata block.
 | Indent / outdent a list item | Tab / ⇧Tab | Tab / Shift+Tab |
 | Find | ⌘F | Ctrl+F |
 | Find and replace | ⌥⌘F | Ctrl+H |
+| Switch between editing and reading | ⌘E | Ctrl+E |
 
 Find and replace search the Markdown source, so they also match text the
 preview hides, like a link's URL. Moving to a match shows the Markdown around
 it. Undo, redo and save work the way they do everywhere else in VS Code.
+
+## Reading mode
+
+Inkline always opens a file for editing. Press **⌘E** (**Ctrl+E**) to switch
+that tab to reading mode, and again to switch back. While reading, the page
+stays drawn wherever you click, links open with a plain click, and nothing can
+change the file; changes made elsewhere still show up. The bottom bar shows
+**Reading** while it is on.
 
 ## Your file, always
 

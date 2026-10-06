@@ -14,6 +14,7 @@ import { tablePreview } from './table-preview'
 import { mathBlockPreview } from './math-preview'
 import { mergeConflicts } from './merge-conflicts'
 import { htmlPreview, openingCaret } from './html-preview'
+import { isReading, readingMode, setReadingMode } from './reading-mode'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -21,10 +22,11 @@ import 'katex/dist/katex.min.css'
 
 interface SourceEditorProps {
   value: string
+  reading: boolean
   onChange: (value: string) => void
 }
 
-export function SourceEditor({ value, onChange }: SourceEditorProps) {
+export function SourceEditor({ value, reading, onChange }: SourceEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const valueRef = useRef(value)
@@ -63,6 +65,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
             mathBlockPreview,
             markdownEditorTheme,
             inklineKeymap,
+            readingMode,
             EditorView.updateListener.of((update) => {
               if (update.docChanged) onChangeRef.current(update.state.doc.toString())
             }),
@@ -74,6 +77,12 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
                 const iconUrl = linkIcon?.dataset.url
                 if (iconUrl) {
                   postMessage({ type: 'openLink', url: iconUrl })
+                  return true
+                }
+                // While reading, a link opens with a plain click, like on a page.
+                const readingUrl = isReading(view.state) ? target.closest('.inkline-live-link')?.getAttribute('title') : null
+                if (readingUrl) {
+                  postMessage({ type: 'openLink', url: readingUrl })
                   return true
                 }
                 const position = view.posAtCoords({ x: event.clientX, y: event.clientY })
@@ -96,6 +105,7 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
       if (view.state.doc.toString() !== valueRef.current) {
         view.dispatch({
           changes: { from: 0, to: view.state.doc.length, insert: valueRef.current },
+          annotations: Transaction.remote.of(true),
         })
       }
       const caret = openingCaret(view.state)
@@ -143,9 +153,17 @@ export function SourceEditor({ value, onChange }: SourceEditorProps) {
     const span = diffRange(current, next)
     view.dispatch({
       changes: { from: span.from, to: span.to, insert: span.insert },
-      annotations: Transaction.addToHistory.of(false),
+      // Remote: the file changed, not the writer - it comes through in reading mode too.
+      annotations: [Transaction.addToHistory.of(false), Transaction.remote.of(true)],
     })
   }, [value])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view || isReading(view.state) === reading) return
+    view.dispatch({ effects: setReadingMode.of(reading) })
+    if (!reading) view.focus()
+  }, [reading])
 
   // A resolved image URI arrives after the decorations that asked for it.
   useEffect(() => onImagesChanged(() => {

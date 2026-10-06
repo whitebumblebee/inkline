@@ -23,6 +23,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // claimed the same way: the editor's own panel handles them.
     vscode.commands.registerCommand('inkline.handledByEditor', () => undefined),
     vscode.commands.registerCommand('inkline.insertImage', () => provider.insertImage()),
+    vscode.commands.registerCommand('inkline.toggleReadingMode', () => provider.toggleReadingMode()),
   )
 }
 

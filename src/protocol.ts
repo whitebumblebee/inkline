@@ -25,6 +25,8 @@ export type HostToWebviewMessage =
   | { type: 'error'; message: string }
   /** Asks the webview to push any debounced edit immediately, before a save. */
   | { type: 'flushEdits'; requestId: string }
+  /** Switches the editor between editing and reading. */
+  | { type: 'toggleReadingMode' }
 
 export type WebviewToHostMessage =
   | { type: 'ready' }

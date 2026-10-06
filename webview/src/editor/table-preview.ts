@@ -2,7 +2,8 @@ import { StateField, type EditorState, type Extension, type Range } from '@codem
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 import { syntaxTree } from '@codemirror/language'
-import { findSourceBlocks } from './live-preview-ranges'
+import { findSourceBlocks, selectionTouchesRange } from './live-preview-ranges'
+import { readingChanged } from './reading-mode'
 
 export type ColumnAlign = 'left' | 'center' | 'right' | null
 
@@ -209,11 +210,6 @@ class TableWidget extends WidgetType {
   }
 }
 
-function selectionTouches(state: EditorState, from: number, to: number): boolean {
-  for (const range of state.selection.ranges) if (range.from <= to && range.to >= from) return true
-  return false
-}
-
 interface TableState {
   blocks: TableBlock[]
   decorations: DecorationSet
@@ -224,7 +220,7 @@ function decorate(state: EditorState, blocks: TableBlock[]): DecorationSet {
   const conflicts = conflictRanges(state)
   for (const block of blocks) {
     // Editing inside the table, or a merge conflict in it, shows its source instead.
-    if (selectionTouches(state, block.from, block.to) || overlapsConflict(conflicts, block.from, block.to)) continue
+    if (selectionTouchesRange(state, block.from, block.to) || overlapsConflict(conflicts, block.from, block.to)) continue
     ranges.push(
       Decoration.replace({ widget: new TableWidget(block), block: true }).range(block.from, block.to),
     )
@@ -256,7 +252,7 @@ const tableField = StateField.define<TableState>({
     if (transaction.docChanged || syntaxTree(transaction.startState) !== syntaxTree(transaction.state)) {
       return buildTableState(transaction.state)
     }
-    if (!transaction.selection) return value
+    if (!transaction.selection && !readingChanged(transaction)) return value
     return { blocks: value.blocks, decorations: decorate(transaction.state, value.blocks) }
   },
 })

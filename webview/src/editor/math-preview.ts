@@ -3,6 +3,7 @@ import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemir
 import katex from 'katex'
 import { findMathRanges, type MathRange } from './math-ranges'
 import { selectionTouchesRange } from './live-preview-ranges'
+import { readingChanged } from './reading-mode'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 function renderLatex(node: HTMLElement, latex: string, displayMode: boolean): void {
@@ -132,7 +133,7 @@ const mathBlockField = StateField.define<MathBlockState>({
   create: (state) => build(state),
   update(value, transaction) {
     if (transaction.docChanged) return build(transaction.state)
-    if (!transaction.selection) return value
+    if (!transaction.selection && !readingChanged(transaction)) return value
     return { blocks: value.blocks, decorations: decorate(transaction.state, value.blocks) }
   },
 })

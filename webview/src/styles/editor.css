@@ -646,6 +646,17 @@
   padding: 0.1em 0.4em;
 }
 
+/* Reading mode: nothing to edit, so no caret, no active line and no
+   conflict buttons; links read as clickable. */
+.inkline-reading .cm-activeLine { background-color: transparent; }
+/* The caret's line normally shows its hidden Markdown faintly; not while reading. */
+.inkline-reading .cm-activeLine .inkline-hidden-syntax { display: none; }
+.inkline-reading .cm-content { caret-color: transparent; cursor: default; }
+.inkline-reading .inkline-conflict-actions { display: none; }
+.inkline-reading .inkline-live-link,
+.inkline-reading .inkline-html-block [data-url] { cursor: pointer; }
+.inkline-reading .inkline-html-block { cursor: auto; }
+
 /* Find and replace. The panel belongs to CodeMirror; these rules dress it in
    Inkline's colours and centre it over the writing column. */
 .source-editor .cm-editor .cm-panels {

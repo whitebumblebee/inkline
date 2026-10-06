@@ -4,6 +4,16 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-06
+
+### Added
+
+- Reading mode. **⌘E** (**Ctrl+E**) switches an Inkline tab between editing and
+  reading. While reading, nothing reveals its Markdown, links open with a plain
+  click, and the file cannot be changed - by typing, pasting, a checkbox or a
+  conflict's buttons - though changes made elsewhere still show up. Inkline
+  always opens files for editing.
+
 ## [0.2.0] - 2026-10-02
 
 ### Added

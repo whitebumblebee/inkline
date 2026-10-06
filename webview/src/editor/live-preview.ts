@@ -15,6 +15,7 @@ import {
 } from './live-preview-ranges'
 import { requestImage, resolvedImage } from './image-store'
 import { isDelimiterRow } from './table-preview'
+import { readingChanged } from './reading-mode'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 interface PreviewItem {
@@ -611,7 +612,7 @@ const livePreviewPlugin = ViewPlugin.fromClass(
       // selection-driven rebuild until mouseup; document and viewport changes
       // still rebuild immediately, because those lines would otherwise render
       // with no decorations at all.
-      const refreshed = update.transactions.some((tr) => tr.effects.some((effect) => effect.is(refreshLivePreview)))
+      const refreshed = update.transactions.some((tr) => readingChanged(tr) || tr.effects.some((effect) => effect.is(refreshLivePreview)))
       const rebuild = this.pendingRebuild || refreshed || update.docChanged || update.viewportChanged
         || (update.selectionSet && !this.mouseDown)
       if (update.selectionSet && this.mouseDown) this.staleSelection = true

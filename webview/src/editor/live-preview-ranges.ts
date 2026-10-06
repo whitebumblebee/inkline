@@ -1,7 +1,11 @@
 import type { EditorState } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
+import { isReading } from './reading-mode'
 
+// Markdown is revealed where the selection touches it - never in reading mode,
+// where every preview, table, formula and HTML block stays drawn.
 export function selectionTouchesRange(state: EditorState, from: number, to: number): boolean {
+  if (isReading(state)) return false
   for (const range of state.selection.ranges) {
     if (range.from <= to && range.to >= from) return true
   }
@@ -9,6 +13,7 @@ export function selectionTouchesRange(state: EditorState, from: number, to: numb
 }
 
 export function selectionTouchesLine(state: EditorState, lineStart: number, lineEnd: number): boolean {
+  if (isReading(state)) return false
   for (const range of state.selection.ranges) {
     if (range.from <= lineEnd && range.to >= lineStart) return true
   }

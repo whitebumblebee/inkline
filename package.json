@@ -52,6 +52,11 @@
         "command": "inkline.insertImage",
         "title": "Insert Image",
         "category": "Inkline"
+      },
+      {
+        "command": "inkline.toggleReadingMode",
+        "title": "Toggle Reading Mode",
+        "category": "Inkline"
       }
     ],
     "customEditors": [
@@ -109,6 +114,12 @@
         "key": "ctrl+h",
         "mac": "cmd+alt+f",
         "when": "activeCustomEditorId == inkline.markdownEditor"
+      },
+      {
+        "command": "inkline.toggleReadingMode",
+        "key": "ctrl+e",
+        "mac": "cmd+e",
+        "when": "activeCustomEditorId == inkline.markdownEditor"
       }
     ],
     "menus": {
@@ -126,6 +137,10 @@
         },
         {
           "command": "inkline.insertImage",
+          "when": "activeCustomEditorId == inkline.markdownEditor"
+        },
+        {
+          "command": "inkline.toggleReadingMode",
           "when": "activeCustomEditorId == inkline.markdownEditor"
         }
       ]

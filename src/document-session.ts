@@ -49,6 +49,10 @@ export class DocumentSession implements vscode.Disposable {
     return this.currentDocument
   }
 
+  toggleReadingMode(): void {
+    this.post({ type: 'toggleReadingMode' })
+  }
+
   initialize(): void {
     this.lastWebviewContent = toEditorText(this.currentDocument.getText())
     this.post({

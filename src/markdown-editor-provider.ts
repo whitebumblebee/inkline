@@ -98,6 +98,10 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
     })
   }
 
+  toggleReadingMode(): void {
+    this.activeSession?.toggleReadingMode()
+  }
+
   openNative(): Thenable<void> {
     const document = this.activeSession?.document
     return document ? vscode.commands.executeCommand('vscode.openWith', document.uri, 'default') : Promise.resolve()

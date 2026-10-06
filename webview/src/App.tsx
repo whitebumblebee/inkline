@@ -8,6 +8,7 @@ import iconPng from '../../media/icon.png'
 
 export function App() {
   const [markdown, setMarkdown] = useState('')
+  const [reading, setReading] = useState(false)
   const [ready, setReady] = useState(false)
   const sendTimer = useRef<number | undefined>(undefined)
   const latestVersion = useRef(0)
@@ -71,6 +72,9 @@ export function App() {
           break
         case 'imageResolved':
           setResolvedImage(message.source, message.uri)
+          break
+        case 'toggleReadingMode':
+          setReading((current) => !current)
           break
         case 'flushEdits':
           // A save is starting: hand over the debounced edit before it runs, or
@@ -152,13 +156,19 @@ Links: [Inkline on GitHub](https://github.com/whitebumblebee/inkline) and wikili
           {ready ? (
             <SourceEditor
               value={markdown}
+              reading={reading}
               onChange={handleSourceChange}
             />
           ) : null}
         </div>
       </section>
 
-      <StatusBar status="Live Preview" words={words} characters={characters} />
+      <StatusBar
+        status={reading ? 'Reading' : 'Live Preview'}
+        hint={`${/Mac/u.test(navigator.platform) ? '⌘E' : 'Ctrl+E'} switches between editing and reading`}
+        words={words}
+        characters={characters}
+      />
     </main>
   )
 }

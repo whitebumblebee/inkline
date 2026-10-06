@@ -5,6 +5,7 @@ import { postMessage } from '../protocol'
 import { imageVersion, isRemoteSource, requestImage, resolvedImage } from './image-store'
 import { refreshLivePreview } from './live-preview'
 import { selectionTouchesRange } from './live-preview-ranges'
+import { isReading, readingChanged } from './reading-mode'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 /**
@@ -135,16 +136,21 @@ class HtmlBlockWidget extends WidgetType {
     node.className = 'inkline-html-block'
     node.appendChild(sanitizeHtml(this.html))
     // A <details> block is drawn open: its content is what you are editing, and
-    // a click opens the source rather than folding it away.
+    // a click opens the source (or, while reading, selects text) rather than
+    // folding it away.
     for (const details of Array.from(node.querySelectorAll('details'))) details.open = true
     node.addEventListener('click', (event) => event.preventDefault())
     node.addEventListener('mousedown', (event) => {
+      const reading = isReading(view.state)
       const link = (event.target as HTMLElement).closest<HTMLElement>('[data-url]')
-      if (link?.dataset.url && (event.metaKey || event.ctrlKey)) {
+      // Links open with ⌘/Ctrl-click while editing, and with a plain click while reading.
+      if (link?.dataset.url && (reading || event.metaKey || event.ctrlKey)) {
         event.preventDefault()
         postMessage({ type: 'openLink', url: link.dataset.url })
         return
       }
+      // While reading, a click is left to the browser, so text can be selected.
+      if (reading) return
       event.preventDefault()
       view.dispatch({ selection: { anchor: Math.min(this.from, view.state.doc.length) } })
       view.focus()
@@ -211,7 +217,7 @@ const htmlField = StateField.define<HtmlState>({
       const blocks = findHtmlBlocks(transaction.state)
       return { blocks, decorations: decorate(transaction.state, blocks) }
     }
-    const refreshed = transaction.effects.some((effect) => effect.is(refreshLivePreview))
+    const refreshed = transaction.effects.some((effect) => effect.is(refreshLivePreview)) || readingChanged(transaction)
     if (!transaction.selection && !refreshed) return value
     return { blocks: value.blocks, decorations: decorate(transaction.state, value.blocks) }
   },
