@@ -4,6 +4,22 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-10-06
+
+### Fixed
+
+- Links to a heading in the same file (`[Limits](#8-known-limitations)`) jump to
+  that heading instead of asking to open `https:///#…` in the browser. Anchors
+  follow GitHub's rules, repeated headings included, and work in long files.
+- Links to another file with a section (`other.md#setup`) open that file;
+  before, the `#setup` was read as part of the file name.
+- `/docs/guide.md` links resolve from the workspace root, as on GitHub, and
+  `my%20notes.md` finds `my notes.md`.
+- A link to a local file that does not exist says so, instead of opening a web
+  page made from its name.
+- ⌘-click (Ctrl-click) opens the link that was clicked, not the first link on
+  the line.
+
 ## [0.3.0] - 2026-10-06
 
 ### Added

@@ -1,6 +1,5 @@
 import { StateEffect, type EditorState, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view'
-import { postMessage } from '../protocol'
 import { findMathRanges } from './math-ranges'
 import { MathPreviewWidget, ownsLines } from './math-preview'
 import {
@@ -16,6 +15,7 @@ import {
 import { requestImage, resolvedImage } from './image-store'
 import { isDelimiterRow } from './table-preview'
 import { readingChanged } from './reading-mode'
+import { followLink } from './links'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
 interface PreviewItem {
@@ -33,16 +33,14 @@ class LinkIconWidget extends WidgetType {
     return this.url === other.url
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const node = document.createElement('span')
     node.className = 'inkline-live-link-icon'
     node.textContent = '↗'
     node.setAttribute('aria-hidden', 'true')
     node.setAttribute('data-url', this.url)
     node.setAttribute('title', this.url)
-    node.addEventListener('click', () => {
-      postMessage({ type: 'openLink', url: this.url })
-    })
+    node.addEventListener('click', () => followLink(view, this.url))
     return node
   }
 

@@ -4,6 +4,7 @@ import { DocumentSession, type SessionHost } from './document-session'
 import { insertImage, vscodeImageService } from './image-service'
 import type { HostToWebviewMessage } from './protocol'
 import { isPathInside, resolveWorkspacePath } from './uri-utils'
+import { resolveLink } from './link-target'
 
 export const viewType = 'inkline.markdownEditor'
 
@@ -52,21 +53,28 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
       insertImage: () => this.insertImage(),
       openLink: async (rawUrl: string) => {
         try {
-          let url = rawUrl.trim()
-          if (!url) return false
-          if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url)) {
-            const docFolder = path.dirname(document.uri.fsPath)
-            const localPath = path.resolve(docFolder, url)
-            const localUri = vscode.Uri.file(localPath)
-            try {
-              await vscode.workspace.fs.stat(localUri)
-              await vscode.commands.executeCommand('vscode.open', localUri)
-              return true
-            } catch {
-              url = `https://${url}`
-            }
+          const target = await resolveLink(
+            rawUrl,
+            path.dirname(document.uri.fsPath),
+            vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath,
+            async (filePath) => {
+              try {
+                await vscode.workspace.fs.stat(vscode.Uri.file(filePath))
+                return true
+              } catch {
+                return false
+              }
+            },
+          )
+          if (target.kind === 'file') {
+            await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(target.path))
+            return true
           }
-          return await vscode.env.openExternal(vscode.Uri.parse(url))
+          if (target.kind === 'external') return await vscode.env.openExternal(vscode.Uri.parse(target.url))
+          if (target.kind === 'missing') {
+            void vscode.window.showWarningMessage(`Inkline couldn't find ${vscode.workspace.asRelativePath(target.path)}.`)
+          }
+          return false
         } catch {
           return false
         }

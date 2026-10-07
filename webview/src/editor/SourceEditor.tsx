@@ -4,7 +4,6 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { bracketMatching, indentOnInput, indentUnit, syntaxHighlighting } from '@codemirror/language'
 import { EditorState, Transaction } from '@codemirror/state'
 import { EditorView, highlightActiveLine, placeholder } from '@codemirror/view'
-import { postMessage } from '../protocol'
 import { GFM } from '@lezer/markdown'
 import { inklineKeymap } from './editor-keymap'
 import { codeLanguages } from './code-languages'
@@ -15,6 +14,7 @@ import { mathBlockPreview } from './math-preview'
 import { mergeConflicts } from './merge-conflicts'
 import { htmlPreview, openingCaret } from './html-preview'
 import { isReading, readingMode, setReadingMode } from './reading-mode'
+import { followLink, linkAt } from './links'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -76,26 +76,24 @@ export function SourceEditor({ value, reading, onChange }: SourceEditorProps) {
                 const linkIcon = target.closest('.inkline-live-link-icon') as HTMLElement | null
                 const iconUrl = linkIcon?.dataset.url
                 if (iconUrl) {
-                  postMessage({ type: 'openLink', url: iconUrl })
+                  followLink(view, iconUrl)
                   return true
                 }
                 // While reading, a link opens with a plain click, like on a page.
                 const readingUrl = isReading(view.state) ? target.closest('.inkline-live-link')?.getAttribute('title') : null
                 if (readingUrl) {
-                  postMessage({ type: 'openLink', url: readingUrl })
+                  followLink(view, readingUrl)
                   return true
                 }
+                if (!event.metaKey && !event.ctrlKey) return false
                 const position = view.posAtCoords({ x: event.clientX, y: event.clientY })
-                if (position === null) return false
+                if (position === null || !view.state.selection.main.empty) return false
+                // The link that was clicked, not just the first one on the line.
                 const line = view.state.doc.lineAt(position)
-                const link = line.text.match(/\[[^\]\n]+\]\(([^)\n]+)\)/u)
-                if (event.metaKey || event.ctrlKey) {
-                  if (link && position >= line.from && position <= line.to && view.state.selection.main.empty) {
-                    postMessage({ type: 'openLink', url: link[1] })
-                    return true
-                  }
-                }
-                return false
+                const url = target.closest('.inkline-live-link')?.getAttribute('title') ?? linkAt(line.text, position - line.from)
+                if (!url) return false
+                followLink(view, url)
+                return true
               },
             }),
           ],

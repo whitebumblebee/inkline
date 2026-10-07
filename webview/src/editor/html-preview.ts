@@ -1,10 +1,10 @@
 import { StateField, type EditorState, type Extension, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { postMessage } from '../protocol'
 import { imageVersion, isRemoteSource, requestImage, resolvedImage } from './image-store'
 import { refreshLivePreview } from './live-preview'
 import { selectionTouchesRange } from './live-preview-ranges'
+import { followLink } from './links'
 import { isReading, readingChanged } from './reading-mode'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
 
@@ -146,7 +146,7 @@ class HtmlBlockWidget extends WidgetType {
       // Links open with ⌘/Ctrl-click while editing, and with a plain click while reading.
       if (link?.dataset.url && (reading || event.metaKey || event.ctrlKey)) {
         event.preventDefault()
-        postMessage({ type: 'openLink', url: link.dataset.url })
+        followLink(view, link.dataset.url)
         return
       }
       // While reading, a click is left to the browser, so text can be selected.
