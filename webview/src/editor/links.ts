@@ -2,6 +2,7 @@ import type { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { postMessage } from '../protocol'
+import { isReading } from './reading-mode'
 
 /**
  * The anchor GitHub gives a heading: lower case, punctuation removed, spaces
@@ -88,3 +89,45 @@ export function followLink(view: EditorView, url: string): void {
   if (!heading) return
   view.dispatch({ selection: { anchor: heading.from }, effects: EditorView.scrollIntoView(heading.from, { y: 'start', yMargin: 24 }) })
 }
+
+/**
+ * How links open from the editor: the ↗ after a link, ⌘/Ctrl-click while
+ * editing, and a plain click while reading.
+ *
+ * Reading mode opens a link on mousedown, before anything moves. On click it
+ * would be too late: the press moves the selection, the line is redrawn under
+ * the pointer, and the browser drops the click because the element it started
+ * on is gone - so a first click on a link did nothing.
+ */
+export const linkClicks = EditorView.domEventHandlers({
+  mousedown(event, view) {
+    if (event.button !== 0 || !isReading(view.state)) return false
+    const url = (event.target as HTMLElement | null)?.closest('.inkline-live-link')?.getAttribute('title')
+    if (!url) return false
+    event.preventDefault()
+    followLink(view, url)
+    return true
+  },
+  click(event, view) {
+    const target = event.target as HTMLElement | null
+    if (!target) return false
+    const iconUrl = (target.closest('.inkline-live-link-icon') as HTMLElement | null)?.dataset.url
+    if (iconUrl) {
+      followLink(view, iconUrl)
+      return true
+    }
+    if (isReading(view.state) || (!event.metaKey && !event.ctrlKey) || !view.state.selection.main.empty) return false
+    // A drawn link carries its target; one shown as source is read from the
+    // text under the pointer - the link clicked, not the first on the line.
+    let url = target.closest('.inkline-live-link')?.getAttribute('title')
+    if (!url) {
+      const position = view.posAtCoords({ x: event.clientX, y: event.clientY })
+      if (position === null) return false
+      const line = view.state.doc.lineAt(position)
+      url = linkAt(line.text, position - line.from)
+    }
+    if (!url) return false
+    followLink(view, url)
+    return true
+  },
+})

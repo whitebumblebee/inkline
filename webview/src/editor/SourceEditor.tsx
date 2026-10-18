@@ -14,7 +14,7 @@ import { mathBlockPreview } from './math-preview'
 import { mergeConflicts } from './merge-conflicts'
 import { htmlPreview, openingCaret } from './html-preview'
 import { isReading, readingMode, setReadingMode } from './reading-mode'
-import { followLink, linkAt } from './links'
+import { linkClicks } from './links'
 import { onImagesChanged } from './image-store'
 import { diffRange } from '../../../src/text-diff'
 import { normalizeMarkdown } from './serializer'
@@ -69,33 +69,7 @@ export function SourceEditor({ value, reading, onChange }: SourceEditorProps) {
             EditorView.updateListener.of((update) => {
               if (update.docChanged) onChangeRef.current(update.state.doc.toString())
             }),
-            EditorView.domEventHandlers({
-              click: (event, view) => {
-                const target = event.target as HTMLElement | null
-                if (!target) return false
-                const linkIcon = target.closest('.inkline-live-link-icon') as HTMLElement | null
-                const iconUrl = linkIcon?.dataset.url
-                if (iconUrl) {
-                  followLink(view, iconUrl)
-                  return true
-                }
-                // While reading, a link opens with a plain click, like on a page.
-                const readingUrl = isReading(view.state) ? target.closest('.inkline-live-link')?.getAttribute('title') : null
-                if (readingUrl) {
-                  followLink(view, readingUrl)
-                  return true
-                }
-                if (!event.metaKey && !event.ctrlKey) return false
-                const position = view.posAtCoords({ x: event.clientX, y: event.clientY })
-                if (position === null || !view.state.selection.main.empty) return false
-                // The link that was clicked, not just the first one on the line.
-                const line = view.state.doc.lineAt(position)
-                const url = target.closest('.inkline-live-link')?.getAttribute('title') ?? linkAt(line.text, position - line.from)
-                if (!url) return false
-                followLink(view, url)
-                return true
-              },
-            }),
+            linkClicks,
           ],
         }),
       })

@@ -10,6 +10,7 @@ import { mathBlockPreview } from '../webview/src/editor/math-preview'
 import { mergeConflicts } from '../webview/src/editor/merge-conflicts'
 import { inklineKeymap } from '../webview/src/editor/editor-keymap'
 import { isReading, readingMode, setReadingMode } from '../webview/src/editor/reading-mode'
+import { linkClicks } from '../webview/src/editor/links'
 import { createEditor, installDom } from './editor-test-utils'
 
 const cleanups: Array<() => void> = []
@@ -96,6 +97,36 @@ describe('reading mode', () => {
     const view = open('<p><a href="https://x.dev">site</a></p>\n\nEnd', [htmlPreview])
     window.inkline = { postMessage: post }
     view.dom.querySelector('.inkline-html-block [data-url]')!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+    expect(post).toHaveBeenCalledWith({ type: 'openLink', url: 'https://x.dev' })
+    view.destroy()
+  })
+
+  it('opens a Markdown link on the first click, once, without moving the selection', () => {
+    const post = vi.fn()
+    const doc = 'Intro\n\nSee [the site](https://x.dev) here.\n'
+    const view = open(doc, [livePreview, linkClicks])
+    window.inkline = { postMessage: post }
+    const link = view.dom.querySelector('.inkline-live-link')!
+    const options = { bubbles: true, cancelable: true, button: 0 }
+    link.dispatchEvent(new window.MouseEvent('mousedown', options))
+    link.dispatchEvent(new window.MouseEvent('mouseup', options))
+    link.dispatchEvent(new window.MouseEvent('click', options))
+    expect(post).toHaveBeenCalledTimes(1)
+    expect(post).toHaveBeenCalledWith({ type: 'openLink', url: 'https://x.dev' })
+    expect(view.state.selection.main.head).toBe(0)
+    view.destroy()
+  })
+
+  it('leaves a plain click on a link alone while editing; ⌘-click opens it', () => {
+    const post = vi.fn()
+    const doc = 'Intro\n\nSee [the site](https://x.dev) here.\n'
+    const view = open(doc, [livePreview, linkClicks])
+    view.dispatch({ effects: setReadingMode.of(false) })
+    window.inkline = { postMessage: post }
+    const link = view.dom.querySelector('.inkline-live-link')!
+    link.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }))
+    expect(post).not.toHaveBeenCalled()
+    link.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true, button: 0, metaKey: true, ctrlKey: true }))
     expect(post).toHaveBeenCalledWith({ type: 'openLink', url: 'https://x.dev' })
     view.destroy()
   })

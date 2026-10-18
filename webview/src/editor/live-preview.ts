@@ -325,6 +325,18 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
         items.push(hide(item.closeFrom, item.to))
       }
       break
+    case 'autolink':
+      // The address is the text, so it is always drawn as a link; only the
+      // angle brackets of `<https://…>` are hidden, like other link syntax.
+    {
+      const inner = item.brackets ? { from: item.from + 1, to: item.to - 1 } : item
+      if (item.brackets && item.hidden) {
+        items.push(hide(item.from, inner.from))
+        items.push(hide(inner.to, item.to))
+      }
+      items.push(mark(inner.from, inner.to, 'inkline-live-link', { title: item.url }))
+      break
+    }
     case 'wikilink':
       if (item.hidden) items.push(mark(item.from, item.to, 'inkline-live-wikilink'))
       break

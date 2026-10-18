@@ -40,6 +40,30 @@ export interface LinkRange {
   hidden: boolean
 }
 
+/**
+ * A link written as its address: a bare `https://…`, `www.…` or email
+ * address, or one in angle brackets (`<https://…>`). GitHub turns these into
+ * links, so Inkline does too. `brackets` is set for the `<…>` form.
+ */
+export interface AutolinkRange {
+  type: 'autolink'
+  from: number
+  to: number
+  url: string
+  brackets: boolean
+  hidden: boolean
+}
+
+const URL_OWNERS = new Set(['Link', 'Image', 'LinkReference', 'Autolink'])
+
+/** What opening an address does: `www.` gets `https://`, an email address `mailto:`. */
+export function autolinkTarget(address: string): string {
+  if (/^[a-z][a-z\d+\-.]*:/iu.test(address)) return address
+  if (/^www\./iu.test(address)) return `https://${address}`
+  if (address.includes('@')) return `mailto:${address}`
+  return address
+}
+
 export interface CodeBlockRange {
   type: 'codeblock'
   from: number
@@ -195,6 +219,7 @@ export interface FrontmatterRange {
 export type LivePreviewItem =
   | HeadingRange
   | LinkRange
+  | AutolinkRange
   | WikiLinkRange
   | CodeBlockRange
   | InlineFormatRange
@@ -333,6 +358,23 @@ export function findLivePreviewItems(state: EditorState, scope?: ItemScope): Liv
             hidden: !touches,
           })
         }
+      }
+
+      // 2a. Addresses as links: `<https://…>`, and bare URLs and emails
+      // (a URL inside `[text](url)`, an image or a reference definition is part of that).
+      else if (node.name === 'Autolink' || (node.name === 'URL' && !URL_OWNERS.has(node.node.parent?.name ?? ''))) {
+        const url = node.name === 'Autolink' ? node.node.getChild('URL') : node.node
+        if (url) {
+          items.push({
+            type: 'autolink',
+            from: node.from,
+            to: node.to,
+            url: autolinkTarget(doc.sliceString(url.from, url.to)),
+            brackets: node.name === 'Autolink',
+            hidden: !selectionTouchesRange(state, node.from, node.to),
+          })
+        }
+        return false
       }
 
       // 2. Links

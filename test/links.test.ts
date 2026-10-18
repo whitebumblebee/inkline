@@ -1,7 +1,13 @@
 import * as path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveLink } from '../src/link-target'
-import { followLink, headingAnchors, linkAt, slugify } from '../webview/src/editor/links'
+import { EditorState } from '@codemirror/state'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { GFM } from '@lezer/markdown'
+import { followLink, headingAnchors, linkAt, linkClicks, slugify } from '../webview/src/editor/links'
+import { autolinkTarget } from '../webview/src/editor/live-preview-ranges'
+import { buildLivePreviewDecorations, livePreview } from '../webview/src/editor/live-preview'
+import { readingMode, setReadingMode } from '../webview/src/editor/reading-mode'
 import { createEditor, installDom } from './editor-test-utils'
 
 const cleanups: Array<() => void> = []
@@ -95,5 +101,69 @@ describe('where a link points', () => {
     expect(await resolve('https://example.com/a#b')).toEqual({ kind: 'external', url: 'https://example.com/a#b' })
     expect(await resolve('mailto:hi@example.com')).toEqual({ kind: 'external', url: 'mailto:hi@example.com' })
     expect(await resolve('example.com/page')).toEqual({ kind: 'external', url: 'https://example.com/page' })
+  })
+})
+
+describe('addresses written as links', () => {
+  function linkMarks(doc: string, anchor = doc.length): { text: string; url: string }[] {
+    const state = EditorState.create({ doc, selection: { anchor }, extensions: [markdown({ base: markdownLanguage, extensions: [GFM] })] })
+    const found: { text: string; url: string }[] = []
+    buildLivePreviewDecorations({ state }).between(0, doc.length, (from, to, decoration) => {
+      if (decoration.spec.class === 'inkline-live-link') found.push({ text: doc.slice(from, to), url: decoration.spec.attributes.title })
+    })
+    return found
+  }
+
+  it('opens www. addresses on the web and email addresses in mail', () => {
+    expect(autolinkTarget('https://x.dev')).toBe('https://x.dev')
+    expect(autolinkTarget('www.github.com')).toBe('https://www.github.com')
+    expect(autolinkTarget('me@example.com')).toBe('mailto:me@example.com')
+    expect(autolinkTarget('mailto:me@example.com')).toBe('mailto:me@example.com')
+  })
+
+  it('draws bare URLs and emails as links, leaving trailing punctuation out', () => {
+    expect(linkMarks('Visit https://example.com/page, www.github.com or me@example.com.\n\nEnd')).toEqual([
+      { text: 'https://example.com/page', url: 'https://example.com/page' },
+      { text: 'www.github.com', url: 'https://www.github.com' },
+      { text: 'me@example.com', url: 'mailto:me@example.com' },
+    ])
+  })
+
+  it('finds them in headings, lists and table cells too', () => {
+    const doc = '# Docs at https://x.dev\n\n- see https://y.dev\n\n| Site |\n| --- |\n| https://z.dev |\n\nEnd'
+    expect(linkMarks(doc).map((link) => link.text)).toEqual(['https://x.dev', 'https://y.dev', 'https://z.dev'])
+  })
+
+  it('hides the brackets of <https://…> until the caret reaches them', () => {
+    const doc = 'See <https://x.dev> here.\n\nEnd'
+    const state = (anchor: number) => EditorState.create({ doc, selection: { anchor }, extensions: [markdown({ base: markdownLanguage, extensions: [GFM] })] })
+    const hiddenText = (anchor: number) => {
+      const hidden: string[] = []
+      buildLivePreviewDecorations({ state: state(anchor) }).between(0, doc.length, (from, to, decoration) => {
+        if (decoration.spec.class === 'inkline-hidden-syntax') hidden.push(doc.slice(from, to))
+      })
+      return hidden
+    }
+    expect(linkMarks(doc)).toEqual([{ text: 'https://x.dev', url: 'https://x.dev' }])
+    expect(hiddenText(doc.length)).toEqual(['<', '>'])
+    expect(hiddenText(8)).toEqual([])
+  })
+
+  it('leaves [text](url) links, images and code alone', () => {
+    const doc = '[site](https://x.dev) ![img](https://y.dev/a.png) `https://z.dev`\n\n```\nhttps://w.dev\n```\n\nEnd'
+    expect(linkMarks(doc)).toEqual([{ text: 'site', url: 'https://x.dev' }])
+  })
+
+  it('opens a pasted URL with one click in reading mode, without changing the file', () => {
+    cleanups.push(installDom())
+    const post = vi.fn()
+    const doc = 'Docs: https://example.com/guide\n\nEnd'
+    const { view } = createEditor(doc, [livePreview, linkClicks, readingMode])
+    view.dispatch({ effects: setReadingMode.of(true) })
+    window.inkline = { postMessage: post }
+    view.dom.querySelector('.inkline-live-link')!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }))
+    expect(post).toHaveBeenCalledWith({ type: 'openLink', url: 'https://example.com/guide' })
+    expect(view.state.doc.toString()).toBe(doc)
+    view.destroy()
   })
 })

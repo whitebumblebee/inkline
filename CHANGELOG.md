@@ -4,6 +4,19 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-10-18
+
+### Fixed
+
+- In reading mode, a link opens on the first click. Before, the first click
+  moved the selection, the line was redrawn under the pointer, and the click
+  was lost, so a link needed a second click.
+- Links written as their address are clickable, as on GitHub and in Obsidian:
+  a pasted `https://…`, a `www.…` address, an email address and
+  `<https://…>`. They open with ⌘-click (Ctrl-click) while editing and a plain
+  click while reading; `www.` opens on the web and an email address starts a
+  new email. The file keeps exactly what you wrote.
+
 ## [0.3.2] - 2026-10-18
 
 ### Fixed
