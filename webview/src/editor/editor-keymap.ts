@@ -1,9 +1,9 @@
 import { defaultKeymap, history, historyKeymap, indentLess, indentMore, redo, undo } from '@codemirror/commands'
 import { closeBracketsKeymap } from '@codemirror/autocomplete'
 import { deleteMarkupBackward, insertNewlineContinueMarkup } from '@codemirror/lang-markdown'
-import { syntaxTree } from '@codemirror/language'
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
-import { ChangeSet, EditorSelection, Prec, type Extension } from '@codemirror/state'
+import { ChangeSet, EditorSelection, Prec, type EditorState, type Extension } from '@codemirror/state'
 import { keymap, type Command } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
 import { indentMarkdownLine, outdentMarkdownLine } from './markdown-editing'
@@ -42,6 +42,46 @@ const enterCodeBlockCommand: Command = (view) => {
     selection: { anchor: from + indentation.length + 1 },
   })
   return true
+}
+
+/** The ordered-list items after the one at `pos`, with each marker's number and where it sits. */
+function followingItems(state: EditorState, pos: number): { number: number; from: number; to: number }[] {
+  const tree = ensureSyntaxTree(state, state.doc.length, 100) ?? syntaxTree(state)
+  let item: SyntaxNode | null = tree.resolveInner(pos, -1)
+  while (item && item.name !== 'ListItem') item = item.parent
+  if (!item || item.parent?.name !== 'OrderedList') return []
+  const items: { number: number; from: number; to: number }[] = []
+  for (let next = item.nextSibling; next; next = next.nextSibling) {
+    const mark = next.name === 'ListItem' ? next.getChild('ListMark') : null
+    if (!mark) continue
+    const digits = /^\d+/u.exec(state.doc.sliceString(mark.from, mark.to))?.[0]
+    if (!digits) break
+    items.push({ number: Number(digits), from: mark.from, to: mark.from + digits.length })
+  }
+  return items
+}
+
+/**
+ * The number for an item inserted after item `current`, and the marker
+ * changes that keep the list counting. Only items that continue the count are
+ * renumbered, so a deliberate jump (1, 2, 10) is kept from the jump on, and a
+ * list written all as `1.` stays that way - Markdown numbers those itself.
+ */
+export function insertOrderedItem(state: EditorState, pos: number, current: number): {
+  number: number
+  renumber: { from: number; to: number; insert: string }[]
+} {
+  const following = followingItems(state, pos)
+  if (following[0]?.number === current) return { number: current, renumber: [] }
+  const number = current + 1
+  const renumber: { from: number; to: number; insert: string }[] = []
+  let expected = number
+  for (const item of following) {
+    if (item.number !== expected) break
+    expected += 1
+    renumber.push({ from: item.from, to: item.to, insert: String(expected) })
+  }
+  return { number, renumber }
 }
 
 const enterListCommand: Command = (view) => {
@@ -137,11 +177,13 @@ const enterListCommand: Command = (view) => {
   // 5. Ordered list item
   const numMatch = beforeCursor.match(/^(\s*)(\d+)([.)])\s+(.*)$/)
   if (numMatch) {
-    const nextNum = Number(numMatch[2]) + 1
-    const insert = `\n${numMatch[1]}${nextNum}${numMatch[3]} `
+    // The new item takes the next number and the items after it move up, in
+    // one edit, so a single undo puts the list back.
+    const { number, renumber } = insertOrderedItem(state, from, Number(numMatch[2]))
+    const insert = `\n${numMatch[1]}${number}${numMatch[3]} `
     const newPos = from + insert.length
     view.dispatch({
-      changes: { from, to: from, insert },
+      changes: [{ from, to: from, insert }, ...renumber],
       selection: { anchor: newPos },
     })
     return true

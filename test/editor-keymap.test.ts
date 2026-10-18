@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { undo } from '@codemirror/commands'
 import { inklineKeymap } from '../webview/src/editor/editor-keymap'
 import type { EditorView } from '@codemirror/view'
 import { installDom, createEditor } from './editor-test-utils'
@@ -123,5 +124,55 @@ describe('undo never escapes the editor', () => {
     })
     expect(result.claimed).toBe(true)
     expect(result.doc).toBe('start')
+  })
+})
+
+describe('Enter in a numbered list renumbers the items after it', () => {
+  const after = (doc: string, line: number) => {
+    const target = doc.split('\n')[line - 1]
+    return pressEnter(doc, line, target.length).doc
+  }
+
+  it('moves the following items up by one', () => {
+    expect(after('1. todo\n2. fj', 1)).toBe('1. todo\n2. \n3. fj')
+    expect(after('1. a\n2. b\n3. c\n4. d', 2)).toBe('1. a\n2. b\n3. \n4. c\n5. d')
+  })
+
+  it('splits an item at the caret and renumbers the rest', () => {
+    expect(pressEnter('1. todo\n2. fj', 1, 5).doc).toBe('1. to\n2. do\n3. fj')
+  })
+
+  it('keeps the list style and starting number', () => {
+    expect(after('1) a\n2) b', 1)).toBe('1) a\n2) \n3) b')
+    expect(after('3. c\n4. d', 1)).toBe('3. c\n4. \n5. d')
+    expect(after('8. h\n9. i\n10. j', 1)).toBe('8. h\n9. \n10. i\n11. j')
+  })
+
+  it('renumbers only the nested list the caret is in', () => {
+    expect(after('1. a\n   1. sub\n   2. sub2\n2. b', 2)).toBe('1. a\n   1. sub\n   2. \n   3. sub2\n2. b')
+  })
+
+  it('renumbers past loose items and their nested content', () => {
+    expect(after('1. a\n\n2. b\n   - note\n\n3. c', 1)).toBe('1. a\n2. \n\n3. b\n   - note\n\n4. c')
+  })
+
+  it('keeps a deliberate jump in numbering', () => {
+    expect(after('1. a\n2. b\n10. j', 1)).toBe('1. a\n2. \n3. b\n10. j')
+  })
+
+  it('leaves a list written all as 1. that way', () => {
+    expect(after('1. a\n1. b\n1. c', 1)).toBe('1. a\n1. \n1. b\n1. c')
+  })
+
+  it('undoes the new item and the renumbering in one step', () => {
+    cleanups.push(installDom())
+    const doc = '1. todo\n2. fj\n3. x'
+    const { view } = createEditor(doc, [inklineKeymap])
+    view.dispatch({ selection: { anchor: 7 } })
+    view.contentDOM.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }))
+    expect(view.state.doc.toString()).toBe('1. todo\n2. \n3. fj\n4. x')
+    undo(view)
+    expect(view.state.doc.toString()).toBe(doc)
+    view.destroy()
   })
 })

@@ -4,6 +4,16 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-10-18
+
+### Fixed
+
+- Pressing **Enter** in a numbered list renumbers the items after the new one:
+  `1. todo` / `2. fj` becomes `1. todo` / `2.` / `3. fj`, instead of two items
+  numbered 2. Nested lists, `1)` lists and lists starting above 1 count on
+  correctly, a deliberate jump in numbering is kept, and a list written all as
+  `1.` stays that way. One undo puts the list back.
+
 ## [0.3.1] - 2026-10-06
 
 ### Fixed
