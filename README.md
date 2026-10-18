@@ -74,17 +74,17 @@ set apart as a small metadata block.
 
 ## Shortcuts
 
-| | macOS | Windows and Linux |
-|---|---|---|
-| Bold | ⌘B | Ctrl+B |
-| Italic | ⌘I | Ctrl+I |
-| Inline code | ⌘\` | Ctrl+\` |
-| Highlight | ⌘⇧8 | Ctrl+Shift+8 |
-| Comment | ⌘/ | Ctrl+/ |
-| Indent / outdent a list item | Tab / ⇧Tab | Tab / Shift+Tab |
-| Find | ⌘F | Ctrl+F |
-| Find and replace | ⌥⌘F | Ctrl+H |
-| Switch between editing and reading | ⌘E | Ctrl+E |
+|                                    | macOS      | Windows and Linux |
+| ---------------------------------- | ---------- | ----------------- |
+| Bold                               | ⌘B         | Ctrl+B            |
+| Italic                             | ⌘I         | Ctrl+I            |
+| Inline code                        | ⌘\`        | Ctrl+\`           |
+| Highlight                          | ⌘⇧8        | Ctrl+Shift+8      |
+| Comment                            | ⌘/         | Ctrl+/            |
+| Indent / outdent a list item       | Tab / ⇧Tab | Tab / Shift+Tab   |
+| Find                               | ⌘F         | Ctrl+F            |
+| Find and replace                   | ⌥⌘F        | Ctrl+H            |
+| Switch between editing and reading | ⌘E         | Ctrl+E            |
 
 Find and replace search the Markdown source, so they also match text the
 preview hides, like a link's URL. Moving to a match shows the Markdown around
@@ -116,8 +116,8 @@ plugins.
 
 ## Settings
 
-| Setting | Default | What it does |
-|---|---|---|
+| Setting                   | Default           | What it does                                                    |
+| ------------------------- | ----------------- | --------------------------------------------------------------- |
 | `inkline.assetsDirectory` | `.inkline-assets` | Where **Insert Image** copies images, relative to the workspace |
 
 ## Installing
