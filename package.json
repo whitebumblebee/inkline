@@ -56,12 +56,26 @@
       {
         "command": "inkline.toggleReadingMode",
         "title": "Toggle Reading Mode",
-        "category": "Inkline"
+        "category": "Inkline",
+        "icon": "$(book)"
       },
       {
         "command": "inkline.chooseTheme",
         "title": "Choose Theme",
-        "category": "Inkline"
+        "category": "Inkline",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "inkline.enterReadingMode",
+        "title": "Switch to Reading Mode",
+        "category": "Inkline",
+        "icon": "$(book)"
+      },
+      {
+        "command": "inkline.exitReadingMode",
+        "title": "Switch to Editing",
+        "category": "Inkline",
+        "icon": "$(edit)"
       }
     ],
     "customEditors": [
@@ -177,6 +191,31 @@
           "command": "inkline.open",
           "when": "resourceLangId == markdown",
           "group": "navigation@1"
+        },
+        {
+          "command": "inkline.enterReadingMode",
+          "when": "activeCustomEditorId == inkline.markdownEditor && !inkline.readingMode",
+          "group": "navigation@1"
+        },
+        {
+          "command": "inkline.exitReadingMode",
+          "when": "activeCustomEditorId == inkline.markdownEditor && inkline.readingMode",
+          "group": "navigation@1"
+        },
+        {
+          "command": "inkline.chooseTheme",
+          "when": "activeCustomEditorId == inkline.markdownEditor",
+          "group": "navigation@2"
+        },
+        {
+          "command": "inkline.toggleReadingMode",
+          "when": "activeCustomEditorId == inkline.markdownEditor",
+          "group": "inkline@1"
+        },
+        {
+          "command": "inkline.chooseTheme",
+          "when": "activeCustomEditorId == inkline.markdownEditor",
+          "group": "inkline@2"
         }
       ],
       "commandPalette": [
@@ -191,6 +230,14 @@
         {
           "command": "inkline.toggleReadingMode",
           "when": "activeCustomEditorId == inkline.markdownEditor"
+        },
+        {
+          "command": "inkline.enterReadingMode",
+          "when": "false"
+        },
+        {
+          "command": "inkline.exitReadingMode",
+          "when": "false"
         }
       ]
     }

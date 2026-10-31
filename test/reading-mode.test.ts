@@ -51,8 +51,11 @@ function hidden(view: EditorView): string[] {
 }
 
 describe('reading mode', () => {
-  it('keeps everything drawn wherever the selection is', () => {
+  it('keeps everything drawn wherever the selection is', async () => {
     const view = open()
+    // The document is parsed in the background; on a busy machine the blocks
+    // further down may not be parsed the moment the editor opens.
+    await vi.waitFor(() => expect(view.dom.querySelector('.inkline-math-block-preview')).not.toBeNull())
     for (const text of ['# Heading', 'bold', 'link', '| 1 |', 'HTML', 'x^2']) {
       view.dispatch({ selection: { anchor: DOC.indexOf(text) + 1 } })
       expect(hidden(view)).toContain('# ')

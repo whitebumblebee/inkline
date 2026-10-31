@@ -92,8 +92,9 @@ it. Undo, redo and save work the way they do everywhere else in VS Code.
 
 ## Reading mode
 
-Inkline always opens a file for editing. Press **⌘E** (**Ctrl+E**) to switch
-that tab to reading mode, and again to switch back. While reading, the page
+Inkline always opens a file for editing. Press **⌘E** (**Ctrl+E**), click the
+book button in the tab's title bar, or click **Live Preview** in the bottom bar
+to switch that tab to reading mode, and do the same to switch back. While reading, the page
 stays drawn wherever you click, links open with a plain click, and nothing can
 change the file; changes made elsewhere still show up. The bottom bar shows
 **Reading** while it is on.
@@ -102,7 +103,8 @@ change the file; changes made elsewhere still show up. The bottom bar shows
 
 Inkline comes with six themes, each in a dark and a light version: **Ink**
 (the default), **Paper**, **Fjord**, **Dusk**, **Forest** and **Mono**. Run
-**Inkline: Choose Theme** to try them; each one shows in your open tabs as you
+**Inkline: Choose Theme**, or click the colour button in an Inkline tab's title
+bar, to try them; each one shows in your open tabs as you
 move through the list. The light or dark version follows VS Code's colour
 theme, unless you set `inkline.appearance`. Every theme keeps body text, links
 and code at readable contrast.

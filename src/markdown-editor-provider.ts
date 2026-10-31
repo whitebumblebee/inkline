@@ -6,6 +6,7 @@ import type { HostToWebviewMessage } from './protocol'
 import { isPathInside, resolveWorkspacePath } from './uri-utils'
 import { resolveLink } from './link-target'
 import { DEFAULT_THEME, THEMES, type Appearance } from './themes'
+import { runThemePicker, type ThemeItem } from './theme-picker'
 
 export const viewType = 'inkline.markdownEditor'
 
@@ -13,6 +14,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
   private readonly sessions = new Map<string, DocumentSession>()
   private readonly disposables: vscode.Disposable[] = []
   private activeSession: DocumentSession | undefined
+  /** Which open tabs are in reading mode; the title-bar button shows the active tab's. */
+  private readonly reading = new WeakMap<DocumentSession, boolean>()
 
   constructor(private readonly context: vscode.ExtensionContext) {
     this.disposables.push(
@@ -47,28 +50,14 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
    * highlighted. Choosing one saves it; closing the list puts back the theme
    * that was set before.
    */
-  async chooseTheme(): Promise<void> {
+  chooseTheme(): void {
     const { theme: saved, appearance } = themeSettings()
-    const picker = vscode.window.createQuickPick<vscode.QuickPickItem & { id: string }>()
-    picker.title = 'Inkline Theme'
-    picker.placeholder = 'Each theme has a light and a dark version, matched to VS Code'
-    picker.items = THEMES.map((theme) => ({ id: theme.id, label: theme.name, description: theme.id === saved ? 'current' : undefined, detail: theme.description }))
-    picker.activeItems = picker.items.filter((item) => item.id === saved)
-    let chosen = false
-    picker.onDidChangeActive(([item]) => {
-      if (item) this.showTheme(item.id, appearance)
-    })
-    picker.onDidAccept(async () => {
-      const [item] = picker.selectedItems
-      chosen = true
-      picker.hide()
-      if (item) await vscode.workspace.getConfiguration('inkline').update('theme', item.id, vscode.ConfigurationTarget.Global)
-    })
-    picker.onDidHide(() => {
-      if (!chosen) this.showTheme(saved, appearance)
-      picker.dispose()
-    })
-    picker.show()
+    runThemePicker(
+      vscode.window.createQuickPick<ThemeItem>(),
+      saved,
+      (theme) => this.showTheme(theme, appearance),
+      (theme) => vscode.workspace.getConfiguration('inkline').update('theme', theme, vscode.ConfigurationTarget.Global),
+    )
   }
 
   async resolveCustomTextEditor(
@@ -124,6 +113,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
     const session = new DocumentSession(document, sessionHost)
     this.sessions.set(key, session)
     this.activeSession = session
+    this.updateReadingContext()
 
     let initialized = false
     const editorDisposables: vscode.Disposable[] = [
@@ -132,10 +122,18 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
           initialized = true
           session.initialize()
         }
+        if (message?.type === 'readingMode') {
+          this.reading.set(session, message.reading === true)
+          if (this.activeSession === session) this.updateReadingContext()
+          return
+        }
         await session.handleMessage(message)
       }),
       webviewPanel.onDidChangeViewState(() => {
-        if (webviewPanel.active) this.activeSession = session
+        if (webviewPanel.active) {
+          this.activeSession = session
+          this.updateReadingContext()
+        }
       }),
     ]
 
@@ -145,6 +143,12 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
       this.sessions.delete(key)
       if (this.activeSession === session) this.activeSession = undefined
     })
+  }
+
+  /** Lets the title bar show "read" or "edit" for the active tab. */
+  private updateReadingContext(): void {
+    const reading = this.activeSession ? this.reading.get(this.activeSession) === true : false
+    void vscode.commands.executeCommand('setContext', 'inkline.readingMode', reading)
   }
 
   toggleReadingMode(): void {

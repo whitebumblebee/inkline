@@ -142,6 +142,11 @@ Links: [Inkline on GitHub](https://github.com/whitebumblebee/inkline) and wikili
     }
   }, [flushPending])
 
+  // The title-bar button shows "read" or "edit" to match, wherever the switch came from.
+  useEffect(() => {
+    postMessage({ type: 'readingMode', reading })
+  }, [reading])
+
   const handleSourceChange = useCallback((nextMarkdown: string) => {
     sendReplacement(nextMarkdown)
   }, [sendReplacement])
@@ -169,7 +174,8 @@ Links: [Inkline on GitHub](https://github.com/whitebumblebee/inkline) and wikili
 
       <StatusBar
         status={reading ? 'Reading' : 'Live Preview'}
-        hint={`${/Mac/u.test(navigator.platform) ? '⌘E' : 'Ctrl+E'} switches between editing and reading`}
+        hint={`Click or press ${/Mac/u.test(navigator.platform) ? '⌘E' : 'Ctrl+E'} to switch between editing and reading`}
+        onStatusClick={() => setReading((current) => !current)}
         words={words}
         characters={characters}
       />

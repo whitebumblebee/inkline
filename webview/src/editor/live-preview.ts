@@ -527,7 +527,26 @@ function addTextScanDecorations(
   addPatternMarks(items, text, offset, /%%([\s\S]*?)%%/gu, 'inkline-comment', code)
   addPatternMarks(items, text, offset, /\[\^[^\]\n]+\]/gu, 'inkline-footnote', code)
   addPatternMarks(items, text, offset, /^\s*\[\^[^\]\n]+\]:.*$/gmu, 'inkline-footnote-definition', code)
-  addPatternMarks(items, text, offset, /==([^=\n]+)==/gu, 'inkline-highlight', code)
+  addHighlightMarks(items, state, text, offset, code)
+}
+
+/**
+ * `==highlight==`: the text keeps its highlight, and the `==` markers hide
+ * like `**` while the caret is elsewhere (and always while reading).
+ */
+function addHighlightMarks(items: PreviewItem[], state: EditorState, text: string, offset: number, code: readonly CodeRange[]): void {
+  for (const match of text.matchAll(/==([^=\n]+)==/gu)) {
+    const from = offset + (match.index ?? 0)
+    const to = from + match[0].length
+    if (insideCodeRange(code, from, to)) continue
+    if (selectionTouchesRange(state, from, to)) {
+      items.push(mark(from, to, 'inkline-highlight'))
+      continue
+    }
+    items.push(hide(from, from + 2))
+    items.push(mark(from + 2, to - 2, 'inkline-highlight'))
+    items.push(hide(to - 2, to))
+  }
 }
 
 function buildDecorations(state: EditorState, scope?: ScanScope): DecorationSet {

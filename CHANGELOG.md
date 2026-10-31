@@ -4,6 +4,25 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-01
+
+### Added
+
+- Buttons in an Inkline tab's title bar: one switches between editing and
+  reading (its icon shows which mode you would switch to), one opens the theme
+  list. Both are also in the tab's **…** menu, in VS Code and in editors built
+  on it such as Cursor, VSCodium and Windsurf.
+- The **Live Preview** / **Reading** label in the bottom bar is a button that
+  switches between editing and reading.
+
+### Fixed
+
+- `==highlight==` hides its `==` markers while the caret is elsewhere, like
+  `**bold**`, and always in reading mode. The text keeps its highlight.
+- A theme chosen in **Inkline: Choose Theme** is saved. In Cursor the choice
+  showed on screen but was never written to the settings, so the list kept
+  calling Ink the current theme and Inkline went back to Ink when reopened.
+
 ## [0.4.0] - 2026-10-31
 
 ### Added

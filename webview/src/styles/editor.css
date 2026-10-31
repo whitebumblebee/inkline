@@ -109,6 +109,18 @@
   letter-spacing: 0.02em;
 }
 
+.status-button {
+  padding: 2px 6px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.status-button:hover { background: var(--inkline-panel-raised); color: var(--inkline-text); }
+
 .status-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Obsidian-style Live Preview styles */
 .cm-line.inkline-heading-line {

@@ -176,3 +176,25 @@ describe('images', () => {
     expect(findLivePreviewItems(state).some((item) => item.type === 'image')).toBe(false)
   })
 })
+
+describe('==highlight==', () => {
+  function decorated(doc: string, anchor: number): { hidden: string[]; highlighted: string[] } {
+    const state = EditorState.create({ doc, selection: { anchor }, extensions: [markdown({ base: markdownLanguage, extensions: [GFM] })] })
+    const result = { hidden: [] as string[], highlighted: [] as string[] }
+    buildLivePreviewDecorations({ state }).between(0, doc.length, (from, to, decoration) => {
+      if (decoration.spec.class === 'inkline-hidden-syntax') result.hidden.push(doc.slice(from, to))
+      if (decoration.spec.class === 'inkline-highlight') result.highlighted.push(doc.slice(from, to))
+    })
+    return result
+  }
+
+  it('hides its markers while the caret is elsewhere, keeping the highlight', () => {
+    const doc = 'Mark ==this part== and ==that==.\n\nEnd'
+    expect(decorated(doc, doc.length)).toEqual({ hidden: ['==', '==', '==', '=='], highlighted: ['this part', 'that'] })
+  })
+
+  it('shows the markers of the one the caret is in', () => {
+    const doc = 'Mark ==this part== and ==that==.\n\nEnd'
+    expect(decorated(doc, 9)).toEqual({ hidden: ['==', '=='], highlighted: ['==this part==', 'that'] })
+  })
+})

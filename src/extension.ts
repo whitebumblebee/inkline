@@ -24,6 +24,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('inkline.handledByEditor', () => undefined),
     vscode.commands.registerCommand('inkline.insertImage', () => provider.insertImage()),
     vscode.commands.registerCommand('inkline.toggleReadingMode', () => provider.toggleReadingMode()),
+    // The same switch, as two title-bar buttons: one shows while editing, the other while reading.
+    vscode.commands.registerCommand('inkline.enterReadingMode', () => provider.toggleReadingMode()),
+    vscode.commands.registerCommand('inkline.exitReadingMode', () => provider.toggleReadingMode()),
     vscode.commands.registerCommand('inkline.chooseTheme', () => provider.chooseTheme()),
   )
 }
