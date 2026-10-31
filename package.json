@@ -2,7 +2,7 @@
   "name": "inkline",
   "displayName": "Inkline",
   "description": "A focused Markdown editor for VS Code-compatible editors.",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "publisher": "shishirjha",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -90,8 +90,22 @@
         "inkline.theme": {
           "type": "string",
           "default": "ink",
-          "enum": ["ink", "paper", "fjord", "dusk", "forest", "mono"],
-          "enumItemLabels": ["Ink", "Paper", "Fjord", "Dusk", "Forest", "Mono"],
+          "enum": [
+            "ink",
+            "paper",
+            "fjord",
+            "dusk",
+            "forest",
+            "mono"
+          ],
+          "enumItemLabels": [
+            "Ink",
+            "Paper",
+            "Fjord",
+            "Dusk",
+            "Forest",
+            "Mono"
+          ],
           "enumDescriptions": [
             "Warm charcoal and amber; parchment in light.",
             "Sepia like an old book; easy on the eyes for long reading.",
@@ -105,7 +119,11 @@
         "inkline.appearance": {
           "type": "string",
           "default": "auto",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "enumDescriptions": [
             "Light or dark to match VS Code's colour theme.",
             "Always the theme's light version.",
