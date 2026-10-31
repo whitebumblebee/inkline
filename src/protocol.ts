@@ -1,3 +1,5 @@
+import type { Appearance } from './themes'
+
 export type HostToWebviewMessage =
   | {
       type: 'initialize'
@@ -27,6 +29,8 @@ export type HostToWebviewMessage =
   | { type: 'flushEdits'; requestId: string }
   /** Switches the editor between editing and reading. */
   | { type: 'toggleReadingMode' }
+  /** The colour theme to show; sent when the settings change and while previewing. */
+  | { type: 'theme'; theme: string; appearance: Appearance }
 
 export type WebviewToHostMessage =
   | { type: 'ready' }

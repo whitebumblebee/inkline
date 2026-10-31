@@ -247,7 +247,7 @@
 }
 
 .inkline-highlight {
-  background: color-mix(in srgb, #d4a55c 28%, transparent);
+  background: color-mix(in srgb, var(--inkline-accent) 28%, transparent);
   border-radius: 2px;
 }
 
@@ -592,11 +592,11 @@
   font-style: normal;
 }
 
-.inkline-callout-note { --callout-color: #58a6ff; }
-.inkline-callout-tip { --callout-color: #3fb950; }
-.inkline-callout-important { --callout-color: #a371f7; }
-.inkline-callout-warning { --callout-color: #d29922; }
-.inkline-callout-caution { --callout-color: #f85149; }
+.inkline-callout-note { --callout-color: var(--inkline-callout-note); }
+.inkline-callout-tip { --callout-color: var(--inkline-callout-tip); }
+.inkline-callout-important { --callout-color: var(--inkline-callout-important); }
+.inkline-callout-warning { --callout-color: var(--inkline-callout-warning); }
+.inkline-callout-caution { --callout-color: var(--inkline-callout-caution); }
 
 /* Raw HTML blocks drawn as HTML (a README's centred logo, a <details> block).
    Text keeps the page's own type; images never overflow the column. */
@@ -748,9 +748,9 @@
   font-family: var(--font-mono);
   font-size: 0.88em;
   padding-inline: 0.75rem;
-  --conflict-current: #3fb950;
-  --conflict-incoming: #58a6ff;
-  --conflict-base: #8b949e;
+  --conflict-current: var(--inkline-callout-tip);
+  --conflict-incoming: var(--inkline-callout-note);
+  --conflict-base: var(--inkline-subtle);
 }
 
 /* The highlighter still reads the markers as Markdown - the side above

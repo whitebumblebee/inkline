@@ -4,6 +4,23 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-31
+
+### Added
+
+- Six themes, each in a dark and a light version: Ink, Paper, Fjord, Dusk,
+  Forest and Mono. **Inkline: Choose Theme** previews them in your open tabs as
+  you move through the list, or set `inkline.theme`. Code highlighting,
+  callouts and conflict colours follow the theme, and every theme keeps text,
+  links and code at readable contrast (WCAG AA, body text AAA).
+- `inkline.appearance`: use a theme's light or dark version always, or (the
+  default) match VS Code.
+
+### Fixed
+
+- Inkline follows VS Code's light themes. Before, it stayed dark whatever
+  VS Code's colour theme was.
+
 ## [0.3.3] - 2026-10-18
 
 ### Fixed

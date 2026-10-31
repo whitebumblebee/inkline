@@ -57,6 +57,11 @@
         "command": "inkline.toggleReadingMode",
         "title": "Toggle Reading Mode",
         "category": "Inkline"
+      },
+      {
+        "command": "inkline.chooseTheme",
+        "title": "Choose Theme",
+        "category": "Inkline"
       }
     ],
     "customEditors": [
@@ -81,6 +86,32 @@
           "type": "string",
           "default": ".inkline-assets",
           "description": "Workspace-relative directory for images inserted by Inkline."
+        },
+        "inkline.theme": {
+          "type": "string",
+          "default": "ink",
+          "enum": ["ink", "paper", "fjord", "dusk", "forest", "mono"],
+          "enumItemLabels": ["Ink", "Paper", "Fjord", "Dusk", "Forest", "Mono"],
+          "enumDescriptions": [
+            "Warm charcoal and amber; parchment in light.",
+            "Sepia like an old book; easy on the eyes for long reading.",
+            "Cool blue-grey and frost, inspired by the north.",
+            "Soft violet evening with rose accents; dawn pink in light.",
+            "Deep evergreen and sage; morning mist in light.",
+            "Greyscale and nothing else; maximum focus on the words."
+          ],
+          "markdownDescription": "Inkline's colour theme. Each comes in dark and light; see `#inkline.appearance#`. **Inkline: Choose Theme** previews them."
+        },
+        "inkline.appearance": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "light", "dark"],
+          "enumDescriptions": [
+            "Light or dark to match VS Code's colour theme.",
+            "Always the theme's light version.",
+            "Always the theme's dark version."
+          ],
+          "description": "Whether Inkline uses its theme's light or dark version."
         }
       }
     },

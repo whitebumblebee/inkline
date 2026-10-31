@@ -1,3 +1,5 @@
+/* Colours are set from webview/src/themes.ts when the editor starts; these are
+   Ink's dark palette, shown until then. */
 :root {
   color-scheme: light dark;
   --inkline-bg: #141514;
@@ -15,19 +17,6 @@
   --font-prose: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, Palatino, "Book Antiqua", Georgia, Cambria, serif;
   --font-writing: "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, Palatino, "Book Antiqua", Georgia, Cambria, serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-}
-
-:root[data-theme="light"] {
-  --inkline-bg: #f6f3ec;
-  --inkline-panel: #ece8df;
-  --inkline-panel-raised: #e4dfd3;
-  --inkline-text: #1f211d;
-  --inkline-muted: #6d7168;
-  --inkline-subtle: #9a9d94;
-  --inkline-border: #d8d2c6;
-  --inkline-accent: #9a6d2a;
-  --inkline-accent-strong: #7d5618;
-  --inkline-selection: #e2d3b3;
 }
 
 * { box-sizing: border-box; }

@@ -98,6 +98,15 @@ stays drawn wherever you click, links open with a plain click, and nothing can
 change the file; changes made elsewhere still show up. The bottom bar shows
 **Reading** while it is on.
 
+## Themes
+
+Inkline comes with six themes, each in a dark and a light version: **Ink**
+(the default), **Paper**, **Fjord**, **Dusk**, **Forest** and **Mono**. Run
+**Inkline: Choose Theme** to try them; each one shows in your open tabs as you
+move through the list. The light or dark version follows VS Code's colour
+theme, unless you set `inkline.appearance`. Every theme keeps body text, links
+and code at readable contrast.
+
 ## Your file, always
 
 Inkline edits the same document VS Code does. Saving, the unsaved-changes dot,
@@ -119,6 +128,8 @@ plugins.
 | Setting                   | Default           | What it does                                                    |
 | ------------------------- | ----------------- | --------------------------------------------------------------- |
 | `inkline.assetsDirectory` | `.inkline-assets` | Where **Insert Image** copies images, relative to the workspace |
+| `inkline.theme`           | `ink`             | The colour theme: `ink`, `paper`, `fjord`, `dusk`, `forest` or `mono` |
+| `inkline.appearance`      | `auto`            | `auto` matches VS Code; `light` or `dark` always uses that version |
 
 ## Installing
 

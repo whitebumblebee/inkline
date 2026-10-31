@@ -5,6 +5,7 @@ import { insertImage, vscodeImageService } from './image-service'
 import type { HostToWebviewMessage } from './protocol'
 import { isPathInside, resolveWorkspacePath } from './uri-utils'
 import { resolveLink } from './link-target'
+import { DEFAULT_THEME, THEMES, type Appearance } from './themes'
 
 export const viewType = 'inkline.markdownEditor'
 
@@ -27,7 +28,47 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
         const session = this.sessions.get(event.document.uri.toString())
         if (session) event.waitUntil(session.flushPendingEdits())
       }),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('inkline.theme') || event.affectsConfiguration('inkline.appearance')) {
+          const { theme, appearance } = themeSettings()
+          this.showTheme(theme, appearance)
+        }
+      }),
     )
+  }
+
+  /** Shows a theme in every open Inkline tab. */
+  private showTheme(theme: string, appearance: Appearance): void {
+    for (const session of this.sessions.values()) session.showTheme(theme, appearance)
+  }
+
+  /**
+   * Lists the themes and shows each one in the open Inkline tabs as it is
+   * highlighted. Choosing one saves it; closing the list puts back the theme
+   * that was set before.
+   */
+  async chooseTheme(): Promise<void> {
+    const { theme: saved, appearance } = themeSettings()
+    const picker = vscode.window.createQuickPick<vscode.QuickPickItem & { id: string }>()
+    picker.title = 'Inkline Theme'
+    picker.placeholder = 'Each theme has a light and a dark version, matched to VS Code'
+    picker.items = THEMES.map((theme) => ({ id: theme.id, label: theme.name, description: theme.id === saved ? 'current' : undefined, detail: theme.description }))
+    picker.activeItems = picker.items.filter((item) => item.id === saved)
+    let chosen = false
+    picker.onDidChangeActive(([item]) => {
+      if (item) this.showTheme(item.id, appearance)
+    })
+    picker.onDidAccept(async () => {
+      const [item] = picker.selectedItems
+      chosen = true
+      picker.hide()
+      if (item) await vscode.workspace.getConfiguration('inkline').update('theme', item.id, vscode.ConfigurationTarget.Global)
+    })
+    picker.onDidHide(() => {
+      if (!chosen) this.showTheme(saved, appearance)
+      picker.dispose()
+    })
+    picker.show()
   }
 
   async resolveCustomTextEditor(
@@ -164,8 +205,10 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
   private getHtml(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'webview', 'assets', 'index.js'))
     const nonce = getNonce()
+    // The theme is written into the page so its first paint is already in the right colours.
+    const { theme, appearance } = themeSettings()
     return `<!doctype html>
-<html lang="en">
+<html lang="en" data-inkline-theme="${theme}" data-inkline-appearance="${appearance}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -192,4 +235,15 @@ function getNonce(): string {
   let value = ''
   for (let index = 0; index < 32; index += 1) value += alphabet[Math.floor(Math.random() * alphabet.length)]
   return value
+}
+
+/** The theme settings, limited to known values (they are written into the page). */
+function themeSettings(): { theme: string; appearance: Appearance } {
+  const config = vscode.workspace.getConfiguration('inkline')
+  const theme = config.get<string>('theme', DEFAULT_THEME)
+  const appearance = config.get<string>('appearance', 'auto')
+  return {
+    theme: THEMES.some((known) => known.id === theme) ? theme : DEFAULT_THEME,
+    appearance: appearance === 'light' || appearance === 'dark' ? appearance : 'auto',
+  }
 }

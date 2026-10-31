@@ -4,6 +4,7 @@ import { SourceEditor } from './editor/SourceEditor'
 import { countCharacters, countWords } from './editor/serializer'
 import { postMessage, type HostToWebviewMessage } from './protocol'
 import { setResolvedImage } from './editor/image-store'
+import { applyTheme } from './apply-theme'
 import iconPng from '../../media/icon.png'
 
 export function App() {
@@ -72,6 +73,9 @@ export function App() {
           break
         case 'imageResolved':
           setResolvedImage(message.source, message.uri)
+          break
+        case 'theme':
+          applyTheme(message.theme, message.appearance)
           break
         case 'toggleReadingMode':
           setReading((current) => !current)

@@ -5,6 +5,7 @@ import {
   type WebviewToHostMessage,
 } from './protocol'
 import { diffRange } from './text-diff'
+import type { Appearance } from './themes'
 
 export interface SessionHost {
   postMessage(message: HostToWebviewMessage): Thenable<boolean> | undefined
@@ -51,6 +52,10 @@ export class DocumentSession implements vscode.Disposable {
 
   toggleReadingMode(): void {
     this.post({ type: 'toggleReadingMode' })
+  }
+
+  showTheme(theme: string, appearance: Appearance): void {
+    this.post({ type: 'theme', theme, appearance })
   }
 
   initialize(): void {
