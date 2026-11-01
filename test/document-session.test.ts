@@ -35,6 +35,7 @@ describe('document session', () => {
     const applyEdit = vi.fn().mockResolvedValue(true)
     const host = createMockHost({ postMessage, applyEdit })
     const session = new DocumentSession(createDocument('Before'), host)
+    session.initialize()
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'After' })
     expect(applyEdit).toHaveBeenCalledOnce()
     expect(postMessage).toHaveBeenCalledWith({ type: 'versionSync', documentVersion: 2 })
@@ -46,7 +47,11 @@ describe('document session', () => {
     const postMessage = vi.fn()
     const applyEdit = vi.fn().mockResolvedValue(true)
     const host = createMockHost({ postMessage, applyEdit })
-    const session = new DocumentSession(createDocument('Hello', 2), host)
+    // Given the file at version 1; the editor's previous keystroke has since
+    // moved VS Code to version 2, and the next one still says 1.
+    const session = new DocumentSession(createDocument('Hello', 1), host)
+    session.initialize()
+    session.onDocumentChanged(createDocument('Hello', 2))
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'Hello\n' })
     expect(applyEdit).toHaveBeenCalledOnce()
     expect(postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'documentChanged' }))
@@ -56,6 +61,7 @@ describe('document session', () => {
     const postMessage = vi.fn()
     const host = createMockHost({ postMessage })
     const session = new DocumentSession(createDocument('Same text', 3), host)
+    session.initialize()
     session.onDocumentChanged(createDocument('Same text', 4))
     expect(postMessage).toHaveBeenCalledWith({ type: 'versionSync', documentVersion: 4 })
     expect(postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'documentChanged' }))
@@ -72,6 +78,7 @@ describe('document session', () => {
       }),
     })
     session = new DocumentSession(createDocument('Before'), host)
+    session.initialize()
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'After' })
     expect(postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'documentChanged' }))
   })
@@ -80,6 +87,7 @@ describe('document session', () => {
     const openLink = vi.fn().mockResolvedValue(true)
     const host = createMockHost({ openLink })
     const session = new DocumentSession(createDocument('Text'), host)
+    session.initialize()
 
     await session.handleMessage({ type: 'openLink', url: 'https://example.com' })
     expect(openLink).toHaveBeenCalledWith('https://example.com')
@@ -95,6 +103,7 @@ describe('document session edits', () => {
     })
     const host = createMockHost({ applyEdit })
     const session = new DocumentSession(createDocument('line one\nline two\nline three'), host)
+    session.initialize()
     await session.handleMessage({
       type: 'replaceDocument',
       baseVersion: 1,
@@ -112,6 +121,7 @@ describe('document session edits', () => {
     const posted: unknown[] = []
     const host = createMockHost({ postMessage: vi.fn((message) => { posted.push(message); return undefined }) })
     const session = new DocumentSession(createDocument('Before'), host)
+    session.initialize()
 
     const flushed = session.flushPendingEdits()
     const request = posted.find((m): m is { type: string; requestId: string } =>
@@ -127,6 +137,7 @@ describe('document session edits', () => {
   it('does not block a save forever when the webview never answers', async () => {
     const host = createMockHost()
     const session = new DocumentSession(createDocument('Before'), host)
+    session.initialize()
     const flushed = session.flushPendingEdits()
     session.dispose()
     await expect(flushed).resolves.toBeUndefined()
@@ -140,6 +151,7 @@ describe('document session edits', () => {
     })
     const host = createMockHost({ applyEdit })
     const session = new DocumentSession(createDocument('one\r\ntwo\r\nthree', 1, vscode.EndOfLine.CRLF), host)
+    session.initialize()
     // the webview only ever sees and sends "\n"
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'one\ntwo\nthree\nfour' })
     const edits = (captured as unknown as { edits: { text: string }[] }).edits

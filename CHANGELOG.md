@@ -4,6 +4,20 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-11-02
+
+### Fixed
+
+- **A file could be emptied when its Inkline tab was opened or restored.**
+  While a tab was still loading, a focus change or a save made the editor send
+  its empty starting text, and that replaced the file's content. A tab moved to
+  another editor group could do the same, since its rebuilt editor was never
+  given the file. Now the editor sends nothing until it has the file and only
+  sends real edits, VS Code ignores anything from an editor that has not been
+  given the file, and a rebuilt editor is always given it. If this happened to
+  you, the file's earlier content is in the Timeline view (Local History) or
+  in Git.
+
 ## [0.5.0] - 2026-11-01
 
 ### Added

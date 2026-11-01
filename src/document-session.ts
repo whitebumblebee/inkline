@@ -33,6 +33,8 @@ export class DocumentSession implements vscode.Disposable {
   private applyingFromWebview = false
   private currentDocument: vscode.TextDocument
   private lastWebviewContent: string
+  /** The document version the editor was last given in full; undefined until it has been. */
+  private initializedVersion: number | undefined
   /** Messages are handled one at a time so a save never observes a half-applied edit. */
   private queue: Promise<void> = Promise.resolve()
   private pendingFlush: { requestId: string; resolve: () => void } | undefined
@@ -59,6 +61,7 @@ export class DocumentSession implements vscode.Disposable {
   }
 
   initialize(): void {
+    this.initializedVersion = this.currentDocument.version
     this.lastWebviewContent = toEditorText(this.currentDocument.getText())
     this.post({
       type: 'initialize',
@@ -146,6 +149,12 @@ export class DocumentSession implements vscode.Disposable {
   }
 
   private async replaceDocument(message: Extract<WebviewToHostMessage, { type: 'replaceDocument' }>): Promise<void> {
+    // An editor that has not been given the file yet, or writes on top of an
+    // older version than the one it was given, is not editing this file: what
+    // it sends would replace the file's content with whatever it holds -
+    // nothing at all, for an editor still loading. Reopening a file used to
+    // wipe it exactly this way.
+    if (this.initializedVersion === undefined || message.baseVersion < this.initializedVersion) return
     const currentMarkdown = toEditorText(this.currentDocument.getText())
     if (message.markdown === currentMarkdown) {
       this.lastWebviewContent = message.markdown

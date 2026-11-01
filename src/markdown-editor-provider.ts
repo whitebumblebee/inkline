@@ -115,13 +115,11 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
     this.activeSession = session
     this.updateReadingContext()
 
-    let initialized = false
     const editorDisposables: vscode.Disposable[] = [
       webviewPanel.webview.onDidReceiveMessage(async (message) => {
-        if (message?.type === 'ready' && !initialized) {
-          initialized = true
-          session.initialize()
-        }
+        // Every time the editor (re)starts it is given the file - a reloaded
+        // editor that was not would start empty.
+        if (message?.type === 'ready') session.initialize()
         if (message?.type === 'readingMode') {
           this.reading.set(session, message.reading === true)
           if (this.activeSession === session) this.updateReadingContext()

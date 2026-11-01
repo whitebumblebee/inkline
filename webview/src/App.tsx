@@ -5,71 +5,46 @@ import { countCharacters, countWords } from './editor/serializer'
 import { postMessage, type HostToWebviewMessage } from './protocol'
 import { setResolvedImage } from './editor/image-store'
 import { applyTheme } from './apply-theme'
+import { EditSync } from './edit-sync'
 import iconPng from '../../media/icon.png'
 
 export function App() {
   const [markdown, setMarkdown] = useState('')
   const [reading, setReading] = useState(false)
   const [ready, setReady] = useState(false)
-  const sendTimer = useRef<number | undefined>(undefined)
-  const latestVersion = useRef(0)
-  const latestMarkdown = useRef('')
+  const sync = useRef(new EditSync(postMessage)).current
 
   const words = useMemo(() => countWords(markdown), [markdown])
   const characters = useMemo(() => countCharacters(markdown), [markdown])
 
-  const pushDocument = useCallback((nextMarkdown: string) => {
-    postMessage({
-      type: 'replaceDocument',
-      baseVersion: latestVersion.current,
-      markdown: nextMarkdown,
-    })
-  }, [])
-
   const sendReplacement = useCallback((nextMarkdown: string) => {
-    latestMarkdown.current = nextMarkdown
     setMarkdown(nextMarkdown)
-    window.clearTimeout(sendTimer.current)
-    sendTimer.current = window.setTimeout(() => {
-      pushDocument(latestMarkdown.current)
-    }, 300)
-  }, [pushDocument])
-
-  const flushPending = useCallback(() => {
-    window.clearTimeout(sendTimer.current)
-    sendTimer.current = undefined
-    pushDocument(latestMarkdown.current)
-  }, [pushDocument])
+    sync.edit(nextMarkdown)
+  }, [sync])
 
   useEffect(() => {
-    const handleBlur = () => {
-      flushPending()
-    }
+    const handleBlur = () => sync.flush()
     window.addEventListener('blur', handleBlur)
     return () => {
       window.removeEventListener('blur', handleBlur)
     }
-  }, [flushPending])
+  }, [sync])
 
   useEffect(() => {
     const receive = (event: MessageEvent<HostToWebviewMessage>) => {
       const message = event.data
       switch (message.type) {
         case 'initialize':
+          sync.load(message.markdown, message.documentVersion)
           setMarkdown(message.markdown)
-          latestMarkdown.current = message.markdown
-          latestVersion.current = message.documentVersion
           setReady(true)
           break
         case 'documentChanged':
-          if (message.markdown !== latestMarkdown.current) {
-            setMarkdown(message.markdown)
-            latestMarkdown.current = message.markdown
-          }
-          latestVersion.current = message.documentVersion
+          sync.external(message.markdown, message.documentVersion)
+          setMarkdown(message.markdown)
           break
         case 'versionSync':
-          latestVersion.current = message.documentVersion
+          sync.synced(message.documentVersion)
           break
         case 'imageResolved':
           setResolvedImage(message.source, message.uri)
@@ -83,7 +58,7 @@ export function App() {
         case 'flushEdits':
           // A save is starting: hand over the debounced edit before it runs, or
           // the file is written without the last keystrokes.
-          flushPending()
+          sync.flush()
           postMessage({ type: 'editsFlushed', requestId: message.requestId })
           break
         default:
@@ -132,15 +107,14 @@ $$\\int_{-\\infty}^\\infty e^{-x^2} dx = \\sqrt{\\pi}$$
 
 Links: [Inkline on GitHub](https://github.com/whitebumblebee/inkline) and wikilinks [[Overview|Documentation]].
 `
+      sync.load(demoMarkdown, 1)
       setMarkdown(demoMarkdown)
-      latestMarkdown.current = demoMarkdown
       setReady(true)
     }
     return () => {
       window.removeEventListener('message', receive)
-      window.clearTimeout(sendTimer.current)
     }
-  }, [flushPending])
+  }, [sync])
 
   // The title-bar button shows "read" or "edit" to match, wherever the switch came from.
   useEffect(() => {

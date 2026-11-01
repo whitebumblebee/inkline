@@ -94,6 +94,7 @@ describe('CRLF files', () => {
       }),
     })
     const session = new DocumentSession(createDocument(file, vscode.EndOfLine.CRLF), host)
+    session.initialize()
     // The webview edits LF text: "one" becomes "one more".
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'Title  \n\none more\ntwo  \nthree\n' })
     expect(edits).toHaveLength(1)
@@ -111,6 +112,7 @@ describe('CRLF files', () => {
       }),
     })
     const session = new DocumentSession(createDocument(file, vscode.EndOfLine.CRLF), host)
+    session.initialize()
     await session.handleMessage({ type: 'replaceDocument', baseVersion: 1, markdown: 'Title  \n\none\nnew\ntwo  \nthree\n' })
     expect(edits.map((edit) => edit.text).join('')).toBe('new\r\n')
   })
