@@ -163,6 +163,7 @@ describe('switching from VS Code', () => {
       openNative: vi.fn(),
       insertImage: vi.fn(),
       openLink: vi.fn().mockResolvedValue(true),
+    copyText: vi.fn().mockResolvedValue(undefined),
     }
     new DocumentSession(document, host).toggleReadingMode()
     expect(postMessage).toHaveBeenCalledWith({ type: 'toggleReadingMode' })

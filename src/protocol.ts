@@ -46,6 +46,8 @@ export type WebviewToHostMessage =
   | { type: 'editsFlushed'; requestId: string }
   /** The editor switched between editing and reading, so the title-bar button can match. */
   | { type: 'readingMode'; reading: boolean }
+  /** Puts text on the clipboard, for a code block's Copy button. */
+  | { type: 'copyText'; text: string }
 
 export function isWebviewToHostMessage(value: unknown): value is WebviewToHostMessage {
   if (!value || typeof value !== 'object' || !('type' in value)) return false
@@ -58,6 +60,7 @@ export function isWebviewToHostMessage(value: unknown): value is WebviewToHostMe
     type === 'openNative' ||
     type === 'openLink' ||
     type === 'editsFlushed' ||
-    type === 'readingMode'
+    type === 'readingMode' ||
+    type === 'copyText'
   )
 }

@@ -56,6 +56,7 @@ describe('what VS Code accepts from the editor', () => {
       openNative: vi.fn(),
       insertImage: vi.fn(),
       openLink: vi.fn().mockResolvedValue(true),
+    copyText: vi.fn().mockResolvedValue(undefined),
     }
     const document = {
       uri: vscode.Uri.file('/notes/x.md'),

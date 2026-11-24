@@ -76,6 +76,11 @@
         "title": "Switch to Editing",
         "category": "Inkline",
         "icon": "$(edit)"
+      },
+      {
+        "command": "inkline.addFrontmatter",
+        "title": "Add Frontmatter",
+        "category": "Inkline"
       }
     ],
     "customEditors": [
@@ -216,6 +221,11 @@
           "command": "inkline.chooseTheme",
           "when": "activeCustomEditorId == inkline.markdownEditor",
           "group": "inkline@2"
+        },
+        {
+          "command": "inkline.addFrontmatter",
+          "when": "activeCustomEditorId == inkline.markdownEditor",
+          "group": "inkline@3"
         }
       ],
       "commandPalette": [
@@ -238,6 +248,10 @@
         {
           "command": "inkline.exitReadingMode",
           "when": "false"
+        },
+        {
+          "command": "inkline.addFrontmatter",
+          "when": "activeCustomEditorId == inkline.markdownEditor"
         }
       ]
     }

@@ -329,6 +329,29 @@
   text-transform: uppercase;
 }
 
+/* Copy button in a code block's top-right corner. A block is several lines,
+   so it cannot appear on hover of the whole block; it stays faint until pointed at. */
+.inkline-copy-code {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  padding: 2px 8px;
+  border: 1px solid var(--inkline-border);
+  border-radius: 5px;
+  background: var(--inkline-panel-raised);
+  color: var(--inkline-muted);
+  font: 500 11px/1.4 var(--font-ui);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 120ms ease;
+  z-index: 1;
+}
+.inkline-copy-code:hover,
+.inkline-copy-code:focus-visible,
+.inkline-copy-code.is-copied { opacity: 1; }
+.inkline-copy-code:hover { color: var(--inkline-text); border-color: var(--inkline-accent); }
+.inkline-copy-code.is-copied { color: var(--inkline-accent-strong); }
+
 .cm-line.inkline-codeblock-last {
   padding-bottom: 10px;
   border-bottom: 1px solid var(--inkline-border);
@@ -482,6 +505,54 @@
   border-bottom-right-radius: 6px;
   color: var(--inkline-subtle);
 }
+
+/* Frontmatter drawn as a card of properties. */
+.inkline-properties {
+  margin: 0.25rem 0 0.5rem;
+  padding: 12px 16px;
+  border: 1px solid var(--inkline-border);
+  border-radius: 8px;
+  background: var(--inkline-panel);
+  font: 13px/1.5 var(--font-ui);
+  cursor: text;
+}
+
+.inkline-properties dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 20px;
+  margin: 0;
+}
+
+.inkline-properties dt {
+  color: var(--inkline-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.inkline-properties dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--inkline-text);
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.inkline-properties-chip {
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--inkline-accent) 16%, transparent);
+  color: var(--inkline-accent-strong);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.inkline-properties-empty { color: var(--inkline-subtle) !important; font-style: italic; }
+.inkline-properties-flag.is-true { color: var(--inkline-callout-tip); }
+.inkline-properties-flag.is-false { color: var(--inkline-muted); }
 
 /* Inline image previews for workspace files the host has approved. */
 .inkline-image-preview {

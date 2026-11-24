@@ -14,6 +14,7 @@ export interface SessionHost {
   openNative(document: vscode.TextDocument): Thenable<void>
   insertImage(document: vscode.TextDocument): Thenable<void>
   openLink(url: string): Thenable<boolean>
+  copyText(text: string): Thenable<void>
 }
 
 /** How long a save waits for the webview to hand over its debounced edit. */
@@ -121,6 +122,9 @@ export class DocumentSession implements vscode.Disposable {
         return
       case 'openLink':
         await this.host.openLink(message.url)
+        return
+      case 'copyText':
+        await this.host.copyText(message.text)
         return
     }
   }

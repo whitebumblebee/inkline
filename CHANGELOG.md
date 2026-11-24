@@ -4,6 +4,20 @@ All notable changes to Inkline are documented here. This project follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-24
+
+### Added
+
+- Frontmatter is drawn as a card of properties - title, date, tags as chips,
+  yes/no for true/false - instead of raw YAML. Click it, or move the caret into
+  it, to edit the YAML. Frontmatter Inkline cannot draw faithfully (nested
+  values, multi-line text) stays as source.
+- **Inkline: Add Frontmatter** adds frontmatter from a template - blog post,
+  note, documentation page, task, or just a title - with the title (from the
+  first heading or the file name) and today's date filled in. It is in the
+  Command Palette and in an Inkline tab's **…** menu.
+- A **Copy** button on every code block copies its code, without the fences.
+
 ## [0.5.1] - 2026-11-02
 
 ### Fixed

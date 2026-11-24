@@ -78,6 +78,7 @@ function createHost(overrides: Partial<SessionHost>): SessionHost {
     openNative: vi.fn(),
     insertImage: vi.fn(),
     openLink: vi.fn().mockResolvedValue(true),
+    copyText: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   }
 }

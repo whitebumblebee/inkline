@@ -28,6 +28,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('inkline.enterReadingMode', () => provider.toggleReadingMode()),
     vscode.commands.registerCommand('inkline.exitReadingMode', () => provider.toggleReadingMode()),
     vscode.commands.registerCommand('inkline.chooseTheme', () => provider.chooseTheme()),
+    vscode.commands.registerCommand('inkline.addFrontmatter', () => provider.addFrontmatter()),
   )
 }
 

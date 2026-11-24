@@ -3,7 +3,7 @@ import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemir
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { imageVersion, isRemoteSource, requestImage, resolvedImage } from './image-store'
 import { refreshLivePreview } from './live-preview'
-import { selectionTouchesRange } from './live-preview-ranges'
+import { findFrontmatter, selectionTouchesRange } from './live-preview-ranges'
 import { followLink } from './links'
 import { isReading, readingChanged } from './reading-mode'
 import { conflictRanges, overlapsConflict } from './merge-conflicts'
@@ -230,6 +230,12 @@ const htmlField = StateField.define<HtmlState>({
  * starts on the line after such a block instead.
  */
 export function openingCaret(state: EditorState): number {
+  // Frontmatter is drawn as a card; start after it, and after a drawn block below it.
+  const frontmatter = findFrontmatter(state)
+  if (frontmatter) {
+    const after = state.doc.lineAt(frontmatter.to).number
+    return after < state.doc.lines ? state.doc.line(after + 1).from : 0
+  }
   // The top of the file must be parsed for this; it nearly always already is.
   const tree = ensureSyntaxTree(state, Math.min(state.doc.length, 10000), 50) ?? syntaxTree(state)
   const first = tree.topNode.firstChild

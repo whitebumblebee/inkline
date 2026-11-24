@@ -7,6 +7,7 @@ import { isPathInside, resolveWorkspacePath } from './uri-utils'
 import { resolveLink } from './link-target'
 import { DEFAULT_THEME, THEMES, type Appearance } from './themes'
 import { runThemePicker, type ThemeItem } from './theme-picker'
+import { FRONTMATTER_TEMPLATES, buildFrontmatter, frontmatterInsert, hasFrontmatter, titleFor, today } from './frontmatter-templates'
 
 export const viewType = 'inkline.markdownEditor'
 
@@ -81,6 +82,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
       resolveImage: (target, source, requestId) => this.resolveImage(target, source, requestId, webviewPanel.webview),
       openNative: (target) => vscode.commands.executeCommand('vscode.openWith', target.uri, 'default'),
       insertImage: () => this.insertImage(),
+      // The editor's clipboard, not the webview's: it works in every VS Code-based editor.
+      copyText: (text) => vscode.env.clipboard.writeText(text),
       openLink: async (rawUrl: string) => {
         try {
           const target = await resolveLink(
@@ -156,6 +159,33 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider, 
   openNative(): Thenable<void> {
     const document = this.activeSession?.document
     return document ? vscode.commands.executeCommand('vscode.openWith', document.uri, 'default') : Promise.resolve()
+  }
+
+  /**
+   * Adds frontmatter from a template to the top of the active file, with its
+   * title and today's date filled in. A file that already has some keeps it.
+   */
+  async addFrontmatter(): Promise<void> {
+    const session = this.activeSession
+    if (!session) return
+    const document = session.document
+    const text = document.getText()
+    if (hasFrontmatter(text)) {
+      void vscode.window.showInformationMessage('This file already has frontmatter. Click its card to edit it.')
+      return
+    }
+    const picked = await vscode.window.showQuickPick(
+      FRONTMATTER_TEMPLATES.map((template) => ({ label: template.label, detail: template.detail, template })),
+      { title: 'Add Frontmatter', placeHolder: 'What is this file?' },
+    )
+    if (!picked) return
+    const current = session.document
+    if (hasFrontmatter(current.getText())) return
+    const block = buildFrontmatter(picked.template, titleFor(current.getText(), path.basename(current.uri.fsPath)), today())
+    const eol = current.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
+    const edit = new vscode.WorkspaceEdit()
+    edit.insert(current.uri, new vscode.Position(0, 0), frontmatterInsert(current.getText(), block).replace(/\n/gu, eol))
+    await vscode.workspace.applyEdit(edit)
   }
 
   async insertImage(): Promise<void> {

@@ -1,3 +1,4 @@
+import { postMessage } from '../protocol'
 import { StateEffect, type EditorState, type Range } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from '@codemirror/view'
 import { findMathRanges } from './math-ranges'
@@ -47,6 +48,53 @@ class LinkIconWidget extends WidgetType {
   ignoreEvent(): boolean {
     return true
   }
+}
+
+/**
+ * The Copy button in a code block's corner. It copies the code itself, never
+ * the fences or the language name, through the editor's clipboard.
+ */
+class CopyCodeWidget extends WidgetType {
+  constructor(readonly code: string) {
+    super()
+  }
+
+  eq(other: CopyCodeWidget): boolean {
+    return this.code === other.code
+  }
+
+  toDOM(): HTMLElement {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'inkline-copy-code'
+    button.textContent = 'Copy'
+    button.title = 'Copy code'
+    let reset: ReturnType<typeof setTimeout> | undefined
+    button.addEventListener('mousedown', (event) => event.preventDefault())
+    button.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      copyText(this.code)
+      button.textContent = 'Copied'
+      button.classList.add('is-copied')
+      clearTimeout(reset)
+      reset = setTimeout(() => {
+        button.textContent = 'Copy'
+        button.classList.remove('is-copied')
+      }, 1500)
+    })
+    return button
+  }
+
+  ignoreEvent(): boolean {
+    return true
+  }
+}
+
+/** Copies through VS Code; in the browser demo, where there is no host, through the browser. */
+function copyText(text: string): void {
+  if (typeof window.acquireVsCodeApi === 'function') postMessage({ type: 'copyText', text })
+  else void navigator.clipboard?.writeText(text)
 }
 
 class ImagePreviewWidget extends WidgetType {
@@ -359,6 +407,13 @@ function addItemDecorations(items: PreviewItem[], state: EditorState, item: Live
         })
       }
       addCodeFenceMarks(items, state, item)
+      if (item.codeText.trim()) {
+        items.push({
+          from: item.firstLineFrom,
+          to: item.firstLineFrom,
+          decoration: Decoration.widget({ widget: new CopyCodeWidget(item.codeText), side: -1 }),
+        })
+      }
       break
     case 'bold':
     case 'italic':

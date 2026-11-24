@@ -48,7 +48,8 @@ again.
 
 **Code.** Fenced code blocks are highlighted for JavaScript, TypeScript,
 Python, Go, Rust, Java, C and C++, PHP, SQL, HTML, CSS, JSON, YAML, XML and
-Markdown. Anything you write inside a code block stays as code.
+Markdown. Anything you write inside a code block stays as code, and the
+**Copy** button in its corner copies it.
 
 **Math.** `$inline$` and `$$block$$` formulas are rendered with KaTeX. Click a
 formula to edit it.
@@ -70,7 +71,10 @@ their alt text. Inline `<kbd>`, `<sub>`, `<sup>`, `<mark>`, `<b>`, `<i>`, `<u>`,
 
 **Everything else.** Blockquotes, horizontal rules, `<!-- comments -->` and
 `%% comments %%` are all handled, and YAML frontmatter at the top of a file is
-set apart as a small metadata block.
+drawn as a card of properties (tags as chips); click it to edit the YAML.
+**Inkline: Add Frontmatter** (also in an Inkline tab's **…** menu) adds one
+from a template - blog post, note, documentation page, task, or just a
+title - with the title and today's date filled in.
 
 ## Shortcuts
 

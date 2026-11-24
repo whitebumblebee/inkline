@@ -13,6 +13,7 @@ import { tablePreview } from './table-preview'
 import { mathBlockPreview } from './math-preview'
 import { mergeConflicts } from './merge-conflicts'
 import { htmlPreview, openingCaret } from './html-preview'
+import { frontmatterPreview } from './frontmatter-preview'
 import { isReading, readingMode, setReadingMode } from './reading-mode'
 import { linkClicks } from './links'
 import { onImagesChanged } from './image-store'
@@ -62,6 +63,7 @@ export function SourceEditor({ value, reading, onChange }: SourceEditorProps) {
             livePreview,
             tablePreview,
             htmlPreview,
+            frontmatterPreview,
             mathBlockPreview,
             markdownEditorTheme,
             inklineKeymap,
